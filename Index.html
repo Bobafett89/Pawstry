@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Super duper game</title>
+        <style>
+            .Cell {
+                background-color: green;
+                height: 60px; 
+                width: 60px;
+                border: solid 2px;
+            }
+            .Cell[empty="false"] {
+                background-color: blue;
+            }
+            .Cell:hover {
+                background-color: red;
+            }
+        </style>    
+        <script>
+            class Field { //
+                cellSize = 60;
+                cells = [];
+                enemies = [];
+                constructor (length, width) {
+                    for(let i = 0; i < width; i++) {
+                        this.cells.push([]);
+                    }
+                    this.cells.forEach(element => {element.length = length});
+                }
+                draw() {
+                    for(let i = 0; i < this.cells.length; i++) {
+                        document.write("<div style='display: flex;'>");
+                        for(let j = 0; j < this.cells[i].length; j++) {
+                            document.write(`<div id="${i}${j}" class="Cell" empty="true"></div>`);
+                            document.getElementById(i.toString() + j.toString()).addEventListener("click", (event) => this.createTower(event.target.id));
+                        }
+                        document.write("</div>");
+                    }
+                }
+                createTower(cell) {
+                    this.cells[cell[0]][cell[1]] = 2;
+                    console.log(this.cells);
+                    document.getElementById(cell).setAttribute("empty", false);
+                }
+                createEnemies(Enemies) {
+                    for(let i = 0; i < Enemies.length; i++) {
+                    this.enemies.push(Enemies[i]);
+                    this.enemies[this.enemies.length-1].id = `e${i}`;
+                    this.enemies[this.enemies.length-1].draw();
+                    }
+                }
+            }
+            class Enemy {
+                speed = 60;
+                disabled = false;
+                id;
+                constructor (lane, cells) {
+                    this.lane = lane;
+                    this.x = cells * 64 + 8;
+                    this.y = this.lane*64+18;
+                }
+                draw() {
+                   document.write(`<div id="${this.id}" style='position: absolute; width: 40px; height: 40px; background-color: yellow; left: ${this.x}px; top: ${this.y}px;'></div>`);
+                }
+                move(frameTime) {
+                    if(!this.disabled) {
+                        let sprite = document.getElementById(this.id.toString());
+                        let posX = Number(sprite.style.left.replace("px", "")) - this.speed * frameTime / 1000;
+                        sprite.style.left = posX.toString() + "px";
+                        if(posX <= 0) {
+                            this.disabled = true;
+                            sprite.hidden = true;
+                        }
+                    }
+                }
+            }
+            class Tower {
+
+            }
+        </script>
+    </head>
+    <body>
+        <script>
+            var frameTime = 100;
+            lane = new Field(5, 5);
+            lane.draw()
+            let enemies = [new Enemy(0, 5), new Enemy(3, 5), new Enemy(4, 5)]
+            lane.createEnemies(enemies);
+            render(10000);
+
+            function render() {
+                lane.enemies.forEach((enemy) => {enemy.move(frameTime)});
+
+                setTimeout(render, frameTime);
+            }
+        </script>
+    </body>
+</html>
