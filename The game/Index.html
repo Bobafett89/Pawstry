@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Super duper game</title>
+        <link href="Styles.css" rel="stylesheet">
+        <script src="GameLogic.js"></script>
+    </head>
+    <body>
+        <div id="mainMenu"></div>
+        
+        <div id="settings"></div>
+
+        <div id="level">
+            <div id="levelUI">
+                <div id="currency">
+                    <img id="currencyImg" src="Assets/heart.png">
+                    <span id="currencyCounter" style="align-self: start; font-size: 50px;">50</span>
+                </div>
+                <div id="heartGeneratorUI" class="Selector">
+                    <img id="heartGeneratorImg" src="Assets/heart_cat.png">
+                </div>
+                <div id="standardTowerUI" class="Selector">
+                    <img id="standardTowerImg" src="Assets/defaut_cat.png">
+                </div>
+                <div id="buffTowerUI" class="Selector">
+                </div>
+                <div id="spikeWallUI" class="Selector">
+                </div>
+                <div id="freezingTowerUI" class="Selector">
+                </div>
+                <span style="font-size: 100px;">⏸️</span>
+            </div>
+
+            <div id="gameScreen">
+                <div id="field">
+                    <div id="cells">
+                    </div>
+                    <img id="fieldImg" src="Assets/background.png">
+                </div>
+            </div>
+        </div>
+        <script src="AuxilaryLogic.js">
+        </script>
+        <script>
+            createCells();
+        </script>
+    </body>
+</html>
