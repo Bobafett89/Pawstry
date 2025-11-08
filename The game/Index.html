@@ -2,47 +2,60 @@
 <html lang="en">
     <head>
         <title>Super duper game</title>
-        <link href="Styles.css" rel="stylesheet">
-        <script src="GameLogic.js"></script>
+        <link href="Assets/Styles/GeneralStyle.css" rel="stylesheet">
+        <link href="Assets/Styles/LevelLoaderStyle.css" rel="stylesheet">
+        <link href="Assets/Styles/LevelStyle.css" rel="stylesheet">
+        <script src="Scripts/GameLogic.js"></script>
+        <script src="Scripts/levelLoader.js"></script>
     </head>
     <body>
-        <div id="mainMenu"></div>
-        
-        <div id="settings"></div>
+        <div id="levelLoader">
+            <div id="jsonLoader">
+                <label for="jsonInput">Choose Levels.json file</label>
+                <input id="jsonInput" type="file" accept=".json" style="display: none;">
+            </div>
+            <div id="levelButtons" hidden>
+                <button id="levelLoad1">Level 1</button>
+                <button id="levelLoad2">Level 2</button>
+                <button id="levelLoad3">Level 3</button>
+            </div>
+        </div>
 
-        <div id="level">
+        <div id="mainMenu" hidden></div>
+        
+        <div id="settings" hidden></div>
+
+        <div id="level" hidden>
             <div id="levelUI">
                 <div id="currency">
                     <img id="currencyImg" src="Assets/heart.png">
                     <span id="currencyCounter" style="align-self: start; font-size: 50px;">50</span>
                 </div>
-                <div id="heartGeneratorUI" class="Selector">
-                    <img id="heartGeneratorImg" src="Assets/heart_cat.png">
+                <div id="GeneratorCatUI" class="Selector">
+                    <img id="GeneratorCatImg" src="Assets/Cats/generator_cat.png">
                 </div>
-                <div id="standardTowerUI" class="Selector">
-                    <img id="standardTowerImg" src="Assets/defaut_cat.png">
+                <div id="basicCatUI" class="Selector">
+                    <img id="basicTowerImg" src="Assets/Cats/basic_cat.png">
                 </div>
-                <div id="buffTowerUI" class="Selector">
+                <div id="buffCatUI" class="Selector">
                 </div>
-                <div id="spikeWallUI" class="Selector">
+                <div id="spikeCatlUI" class="Selector">
                 </div>
-                <div id="freezingTowerUI" class="Selector">
+                <div id="freezingCatUI" class="Selector">
                 </div>
-                <span style="font-size: 100px;">⏸️</span>
+                <span id="exitUI" style="font-size: 100px;">❌</span>
             </div>
 
             <div id="gameScreen">
                 <div id="field">
-                    <div id="cells">
-                    </div>
-                    <img id="fieldImg" src="Assets/background.png">
+                    <div id="cells"></div>
+                    <img id="fieldImg" src="Assets/FieldVariants/FiveLanes.png">
                 </div>
             </div>
         </div>
-        <script src="AuxilaryLogic.js">
-        </script>
+
         <script>
-            createCells();
+            new LevelLoader();
         </script>
     </body>
 </html>
