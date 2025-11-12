@@ -38,6 +38,7 @@
                     <button id="settingsApply">Apply</button>
                     <button id="settingsTest">Sound test</button>
                 </div>
+                <span style="font-size: 40px; color: yellow;">To kill enemy press "S"</span>
             </div>
         </div>
 
@@ -46,6 +47,11 @@
         <div id="settings" hidden></div>
 
         <div id="level" hidden>
+            <div id="endScreen" hidden>
+                <span id="endMessage">...</span>
+                <button id="endButton">Back</button>
+            </div>
+
             <div id="levelUI">
                 <div id="currency">
                     <img id="currencyImg" src="Assets/heart.png">
@@ -70,14 +76,13 @@
                 <div id="field">
                     <div id="cells" style="z-index: 1;"></div>
                     <img id="fieldImg" src="Assets/FieldVariants/FiveLanes.png">
-                    <img id="catMockup" src="Assets/Cats/Animations/basic_cat_idle.png" style="left: 78px; top: 331px;">
                 </div>
             </div>
         </div>
 
         <script>
-            var cellSize = {x: 196, y: 132}; //object which stores size of the cells in pixels
             var tps; //ticks per seconds - similiar to frames per second
+            var cellSize = {x: 196, y: 133}; //object which stores size of the cells in pixels
             var audioManager = new AudioManager();
             new LevelLoader();
         </script>
