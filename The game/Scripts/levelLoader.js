@@ -8,6 +8,9 @@ class LevelLoader {
         document.getElementById("levelLoad1").addEventListener("click", () => this.loadLevel(0));
         document.getElementById("levelLoad2").addEventListener("click", () => this.loadLevel(1));
         document.getElementById("levelLoad3").addEventListener("click", () => this.loadLevel(2));
+
+        this.setTps();
+        this.initTpsSetting();
     }
 
     async fileLoad() { //function which checks if chosen file is correct, if yes parses it into "levels" and transitions to level choice
@@ -15,7 +18,7 @@ class LevelLoader {
         if(file.name == "Levels.json") {
             this.levels = JSON.parse(await file.text());
             document.getElementById("jsonLoader").hidden = true;
-            document.getElementById("levelButtons").hidden = false;
+            document.getElementById("testMenu").hidden = false;
         }
     }
 
@@ -37,5 +40,32 @@ class LevelLoader {
             let waves = Object.entries(this.levels)[level][1];
             new LevelManager(level, waves);
         }
+    }
+    
+    setTps() {
+        let savedTps = localStorage.getItem("tps");
+        if(savedTps == null) {
+            savedTps = 30;
+            localStorage.setItem("tps", savedTps);
+        }
+        tps = Number(savedTps);
+    }
+
+    initTpsSetting() {
+        let tpsSlider = document.getElementById("tickInput");
+        let tpsOutput = document.querySelector("output[for='tickInput']");
+
+        tpsSlider.value = tps;
+        tpsOutput.textContent = tpsSlider.value;
+
+        tpsSlider.addEventListener("input", () => tpsOutput.textContent = tpsSlider.value);
+        document.getElementById("settingsApply").addEventListener("click", () => {
+            tps = Number(tpsSlider.value);
+            localStorage.setItem("tps", tps);
+        });
+        document.getElementById("settingsCancel").addEventListener("click", () => {
+            tpsSlider.value = tps;
+            tpsOutput.textContent = tpsSlider.value;
+        });
     }
 }

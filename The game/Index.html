@@ -14,10 +14,30 @@
                 <label for="jsonInput">Choose Levels.json file</label>
                 <input id="jsonInput" type="file" accept=".json" style="display: none;">
             </div>
-            <div id="levelButtons" hidden>
+            <div id="testMenu" hidden>
                 <button id="levelLoad1">Level 1</button>
                 <button id="levelLoad2">Level 2</button>
                 <button id="levelLoad3">Level 3</button>
+                <div>
+                    <label for="musicVolInput">Music volume</label>
+                    <input id="musicVolInput" type="range" min="0" max="1" step="0.01">
+                    <output for="musicVolInput">0%</output>
+                </div>
+                <div>
+                    <label for="sfxVolInput">Sounds volume</label>
+                    <input id="sfxVolInput" type="range" min="0" max="1" step="0.01">
+                    <output for="sfxVolInput">0%</output>
+                </div>
+                <div>
+                    <label for="tickInput">Ticks per second</label>
+                    <input id="tickInput" type="range" min="10" max="60" step="1">
+                    <output for="tickInput">0</output>
+                </div>
+                <div>
+                    <button id="settingsCancel">Cancel</button>
+                    <button id="settingsApply">Apply</button>
+                    <button id="settingsTest">Sound test</button>
+                </div>
             </div>
         </div>
 
@@ -48,13 +68,17 @@
 
             <div id="gameScreen">
                 <div id="field">
-                    <div id="cells"></div>
+                    <div id="cells" style="z-index: 1;"></div>
                     <img id="fieldImg" src="Assets/FieldVariants/FiveLanes.png">
+                    <img id="catMockup" src="Assets/Cats/Animations/basic_cat_idle.png" style="left: 78px; top: 331px;">
                 </div>
             </div>
         </div>
 
         <script>
+            var cellSize = {x: 196, y: 132}; //object which stores size of the cells in pixels
+            var tps; //ticks per seconds - similiar to frames per second
+            var audioManager = new AudioManager();
             new LevelLoader();
         </script>
     </body>

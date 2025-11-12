@@ -1,5 +1,4 @@
 #levelLoader {
-    position: absolute;
     width: 1920px;
     height: 1080px;
     display: flex;
@@ -28,11 +27,16 @@ button[id*="levelLoad"] {
     border-radius: 20px;
 }
 
-#levelButtons {
+#testMenu {
+    width: 450px;
     display: flex;
     flex-flow: column;
     gap: 15px;
     &[hidden] {
         display: none;
     }
+}
+
+#testMenu > div * {
+    font-size: 35px;
 }

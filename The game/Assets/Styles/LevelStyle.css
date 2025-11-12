@@ -15,24 +15,6 @@
     align-items: center;
 }
 
-#gameScreen {
-    width: 1920px;
-    height: 800px;
-}
-
-#field {
-    position: absolute;
-    margin-top: 67px;
-    margin-left: 78px;
-}
-
-#cells {
-    position: absolute;
-    display: grid;
-    grid-template-columns: repeat(9, 196px);
-    grid-template-rows: repeat(5, 132px);
-}
-
 .Selector {
     width: 200px;
     height: 200px;
@@ -40,6 +22,26 @@
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+#gameScreen {
+    width: 1920px;
+    height: 800px;
+}
+
+#field {
+    margin-top: 67px;
+    margin-left: 78px;
+}
+
+#field > * {
+    position: absolute;
+}
+
+#cells {
+    display: grid;
+    grid-template-columns: repeat(9, 196px);
+    grid-template-rows: repeat(5, 132px);
 }
 
 .Cell:hover {

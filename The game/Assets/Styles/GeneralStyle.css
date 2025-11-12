@@ -6,3 +6,7 @@ body {
     border-right: 2px solid black;
     margin: 0;
 }
+
+body > div {
+    position: absolute;
+}
