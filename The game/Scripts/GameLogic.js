@@ -177,8 +177,8 @@ class Tower {
         this.type = type;
 
         switch (this.type) {
-            case "angry"://шипастый
-                this.stats(40, 5, 0);
+            case "angry"://обычный
+                this.stats(6, 4, 0);
                 break;
             case "buff"://баффающий
                 this.stats(2, 10, 5);
@@ -189,8 +189,8 @@ class Tower {
             case "lazy": //замедляющий
                 this.stats(6, 7, 1000);
                 break;
-            case "shield"://обычный
-                this.stats(6, 4, 0);
+            case "shield"://шипастый
+                this.stats(40, 5, 0);
                 break;
         }
     }
