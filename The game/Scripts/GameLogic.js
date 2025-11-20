@@ -20,6 +20,7 @@ class LevelManager {
         toughEnemy: { x: 95, y: 69 }
     }; //halfed dimensions of sprites which are used to place entities correctly
     buttonControl = new AbortController(); //object which is used to delete all created eventListeners inside LevelManager
+    chosenTower = "generator";
 
     constructor(level, waves) {
         this.levelInfo = {
@@ -85,6 +86,15 @@ class LevelManager {
     createButtons() { //assigns actions to buttons
         document.getElementById("exitUI").addEventListener("click", () => this.status = "exit", { signal: this.buttonControl.signal });
         document.getElementById("endButton").addEventListener("click", () => this.status = "exit", { signal: this.buttonControl.signal });
+        document.getElementById("generatorCatUI").addEventListener("click", () => this.chosenTower = "Generator", { signal: this.buttonControl.signal });
+        document.getElementById("basicCatUI").addEventListener("click", () => this.chosenTower = "Basic", { signal: this.buttonControl.signal });
+        document.getElementById("buffCatUI").addEventListener("click", () => this.chosenTower = "Buff", { signal: this.buttonControl.signal });
+        document.getElementById("spikeCatUI").addEventListener("click", () => this.chosenTower = "Spike", { signal: this.buttonControl.signal });
+        document.getElementById("freezingCatUI").addEventListener("click", () => this.chosenTower = "Freezing", { signal: this.buttonControl.signal });
+    }
+
+    placeTower(lane, cell) {
+        this.entities.towers[lane][cell] = new Tower;
     }
 
     exit() { //removes entities, eventListeners and switches screens
@@ -191,6 +201,10 @@ class LevelManager {
             sprite.style.left = this.entities.enemies[laneIndex][enemyIndex].position.x.toString() + "px";
             sprite.style.top = this.entities.enemies[laneIndex][enemyIndex].position.y.toString() + "px";
         }
+    }
+
+    chooseTower(towerType) {
+        this.chosenTower = towerType;
     }
 
     debug() { //temporary function to debug
