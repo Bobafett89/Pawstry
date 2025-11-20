@@ -20,7 +20,7 @@ class LevelManager {
         toughEnemy: { x: 95, y: 69 }
     }; //halfed dimensions of sprites which are used to place entities correctly
     buttonControl = new AbortController(); //object which is used to delete all created eventListeners inside LevelManager
-    chosenTower = "generator";
+    chosenTower = "Generator";
 
     constructor(level, waves) {
         this.levelInfo = {
@@ -31,11 +31,10 @@ class LevelManager {
         this.status = "running";
 
         this.initEntitiesArrays();
-        this.createButtons();
         this.createCells();
+        this.createButtons();
         this.debug();
         this.update();
-        this.placeTower();
     }
 
     update() { //main function where most of the logic takes place and which is called each tick
@@ -68,7 +67,7 @@ class LevelManager {
         let cells = "";
         for (let i = 0; i < this.levelInfo.lanes; i++) {
             for (let j = 0; j < 9; j++) {
-                cells += `<div id="cell_${i}_${j}" class="Cell"></div>`;
+                cells += `<div id="c_${i}_${j}" class="Cell"></div>`;
             }
         }
         document.getElementById("cells").innerHTML = cells;
@@ -92,14 +91,33 @@ class LevelManager {
         document.getElementById("buffCatUI").addEventListener("click", () => this.chosenTower = "Buff", { signal: this.buttonControl.signal });
         document.getElementById("spikeCatUI").addEventListener("click", () => this.chosenTower = "Spike", { signal: this.buttonControl.signal });
         document.getElementById("freezingCatUI").addEventListener("click", () => this.chosenTower = "Freezing", { signal: this.buttonControl.signal });
+
+        
+        document.addEventListener("click", (event) => {
+            if(event.target.className == "Cell") {
+                let idParts = event.target.id.split("_");
+                let lane = idParts[1];
+                let cell = idParts[2];
+                this.placeTower(lane, cell, this.chosenTower);
+            }
+        });
     }
 
-    placeTower(lane, cell) {
-        this.entities.towers[lane][cell] = new Tower;
+    placeTower(lane, cell, type) {
+        if(this.entities.towers[lane][cell] == undefined) {
+            let position = {
+                x: this.firstCell.x + cellSize.x * cell,
+                y: this.firstCell.y + cellSize.y * lane
+            }
+            let id = `t_${type}_${lane}_${cell}`
+            this.entities.towers[lane][cell] = new Tower(id, position, type);
+            document.getElementById("gameScreen").innerHTML += this.entities.towers[lane][cell].createTower();
+        }
     }
 
     exit() { //removes entities, eventListeners and switches screens
         this.entities.enemies.forEach(lane => lane.forEach(enemy => document.getElementById(enemy.id).remove()));
+        this.entities.towers.forEach(lane => lane.forEach(tower => document.getElementById(tower.id).remove()));
         this.buttonControl.abort();
         document.getElementById("endScreen").hidden = true;
         document.getElementById("level").hidden = true;
@@ -157,7 +175,7 @@ class LevelManager {
                 this.waveInfo.waves[waveNumber] -= 100;
                 break;
         }
-        this.spawnEnemy(`${type}_${waveNumber}_${idLeft}`, randomLane, type);
+        this.spawnEnemy(`e_${type}_${waveNumber}_${idLeft}`, randomLane, type);
     }
 
     waveManager() {//spawns and progresses waves and checks lose and win conditions
@@ -204,10 +222,6 @@ class LevelManager {
         }
     }
 
-    chooseTower(towerType) {
-        this.chosenTower = towerType;
-    }
-
     debug() { //temporary function to debug
         window.addEventListener("keydown", (event) => { // kill enemies with a press of the key "S"
             if (event.code == "KeyS") {
@@ -244,37 +258,6 @@ class LevelManager {
             }
         }, {signal: this.buttonControl.signal});
     }
-
-    placeTower(){
-        let currCell;
-        let tempStorage = ""; // temporary storage for tower type
-        document.addEventListener("click", function(event) { //defines clicked tower
-            let targetElement = event.target;
-            while (targetElement && !targetElement.classList.contains('Selector')) {
-                targetElement = targetElement.parentElement;
-            }
-            if (targetElement && targetElement.id) {
-                Tower.type = targetElement.id;
-                tempStorage = targetElement.id;
-                console.log(Tower.type);
-            }
-        })
-
-        document.addEventListener("click", function(event) { //defines id of clicked cell
-            let targetElement = event.target;
-            while (targetElement && !targetElement.classList.contains('Cell')) {
-                targetElement = targetElement.parentElement;
-            }
-            if (targetElement && targetElement.id) {
-                currCell = targetElement.id;
-                console.log(targetElement.id)
-            }
-        })
-    }
-    /*немного хз как это распихать правильно. идея в том, 
-      что я кликаю на перса, игра это запомнинает, потом
-      я кликаю на клетку, и там ставится башня. ну я может
-      еще покумекаю над этим :З */
 }
 
 class Tower {
