@@ -11,6 +11,9 @@ class LevelLoader {
 
         this.setTps();
         this.initTpsSetting();
+        this.loadProgress();
+        this.initProgressButtons();
+        this.updateProgress();
     }
 
     async fileLoad() { //function which checks if chosen file is correct, if yes copies text into "jsonText" and transitions to level choice
@@ -43,7 +46,7 @@ class LevelLoader {
     
     setTps() {
         let savedTps = localStorage.getItem("tps");
-        if(savedTps == null) {
+        if(savedTps === null) {
             savedTps = 30;
             localStorage.setItem("tps", savedTps);
         }
@@ -66,5 +69,29 @@ class LevelLoader {
             tpsSlider.value = tps;
             tpsOutput.textContent = tpsSlider.value;
         });
+    }
+
+    loadProgress() {
+        let progress = localStorage.getItem("level");
+        if(progress === null) {
+            progress = 0;
+            localStorage.setItem("level", progress);
+        }
+        availableLevels = Number(progress);
+    }
+
+    updateProgress() {
+        document.getElementById("debugProgress").innerHTML = `Levels passed: ${availableLevels}`;
+    }
+
+    initProgressButtons() {
+        document.getElementById("settingsProgressReset").addEventListener("click", () => this.resetProgress());
+        document.getElementById("endButton").addEventListener("click", () => this.updateProgress());
+    }
+
+    resetProgress() {
+        availableLevels = 0;
+        localStorage.setItem("level", availableLevels);
+        this.updateProgress();
     }
 }

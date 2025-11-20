@@ -32,7 +32,7 @@ class LevelManager {
         this.initEntitiesArrays();
         this.createButtons();
         this.createCells();
-        this.enemyDebug();
+        this.debug();
         this.update();
     }
 
@@ -48,6 +48,11 @@ class LevelManager {
         } else if (this.status == "win" || this.status == "lose") {
             document.getElementById("endScreen").hidden = false;
             document.getElementById("endMessage").innerHTML = (this.status == "win") ? ("Victory!!!") : ("Defeat...");
+            if(this.status == "win" && availableLevels == this.levelInfo.currentLevel) {
+                localStorage.setItem("level", this.levelInfo.currentLevel + 1);
+                availableLevels = this.levelInfo.currentLevel + 1;
+            }
+
             this.status = "wait";
             setTimeout(() => this.update(), 100);
         } else if (this.status == "wait") {
@@ -188,7 +193,7 @@ class LevelManager {
         }
     }
 
-    enemyDebug() { //temporary function to debug enemies
+    debug() { //temporary function to debug
         window.addEventListener("keydown", (event) => { // kill enemies with a press of the key "S"
             if (event.code == "KeyS") {
                 let enemies = this.entities.enemies;
@@ -214,6 +219,15 @@ class LevelManager {
                 }
             }
         }, { signal: this.buttonControl.signal });
+
+        window.addEventListener("keydown", (event) => {
+            if(event.code == "KeyW") {
+                this.status = "win";
+            }
+            if(event.code == "KeyL") {
+                this.status = "lose";
+            }
+        }, {signal: this.buttonControl.signal});
     }
 }
 
@@ -295,6 +309,7 @@ class AudioManager {
         music: undefined,
         sfx: undefined
     };
+    defaultVol = 0.5;
     UI = {
         click: new Audio("Assets/Audio/testSound.ogg"),
         towerPlace: new Audio("Assets/Audio/testSound.ogg")
@@ -327,11 +342,10 @@ class AudioManager {
     getVolume() { //gets volume from the localStorage or sets default values with writing it into the localStorage
         let sfxVol = localStorage.getItem("sfxVol");
         let musicVol = localStorage.getItem("musicVol");
-        if (sfxVol == null || musicVol == null) {
-            let defaultVol = 0.5;
-            localStorage.setItem("sfxVol", defaultVol);
-            localStorage.setItem("musicVol", defaultVol);
-            return { music: 0.5, sfx: 0.5 };
+        if (sfxVol === null || musicVol === null) {
+            localStorage.setItem("sfxVol", this.defaultVol);
+            localStorage.setItem("musicVol", this.defaultVol);
+            return { music: this.defaultVol, sfx: this.defaultVol };
         } else {
             return { music: Number(musicVol), sfx: Number(sfxVol) };
         }
@@ -381,6 +395,14 @@ class AudioManager {
             sfxSlider.value = this.volume.sfx;
             sfxOutput.textContent = sfxSlider.value;
         });
+        document.getElementById("settingsVolumeReset").addEventListener("click", () => this.resetVolume());
+    }
+
+    resetVolume() {
+        this.volume.music = this.defaultVol;
+        this.volume.sfx = this.defaultVol;
+        document.getElementById("settingsCancel").click();
+        document.getElementById("settingsApply").click();
     }
 
     testSound() { //temporary function to test sound

@@ -36,10 +36,13 @@
                 <div>
                     <button id="settingsCancel">Cancel</button>
                     <button id="settingsApply">Apply</button>
+                    <button id="settingsVolumeReset">Reset volume</button>
                     <button id="settingsTest">Sound test</button>
+                    <button id="settingsProgressReset">Reset progress</button>
                 </div>
                 <span style="font-size: 40px; color: yellow;">To kill enemy press "S"</span>
                 <span style="font-size: 40px; color: yellow;">To damage enemy press "D"</span>
+                <span id="debugProgress" style="font-size: 40px; color: yellow;">Levels passed: 0</span>
             </div>
         </div>
 
@@ -84,6 +87,7 @@
         <script>
             var tps; //ticks per seconds - similiar to frames per second
             var cellSize = {x: 196, y: 133}; //object which stores size of the cells in pixels
+            var availableLevels;
             var audioManager = new AudioManager();
             new LevelLoader();
         </script>
