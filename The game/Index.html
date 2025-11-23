@@ -40,9 +40,9 @@
                     <button id="settingsTest">Sound test</button>
                     <button id="settingsProgressReset">Reset progress</button>
                 </div>
-                <span style="font-size: 40px; color: yellow;">To kill enemy press "S"</span>
-                <span style="font-size: 40px; color: yellow;">To damage enemy press "D"</span>
-                <span id="debugProgress" style="font-size: 40px; color: yellow;">Levels passed: 0</span>
+                <span style="font-size: 40px; color: blue;">To kill enemy press "S"</span>
+                <span style="font-size: 40px; color: blue;">To damage enemy press "D"</span>
+                <span id="debugProgress" style="font-size: 40px; color: blue;">Levels passed: 0</span>
             </div>
         </div>
 
@@ -58,26 +58,30 @@
 
             <div id="levelUI">
                 <div id="currency">
-                    <img id="currencyImg" src="Assets/heart.png">
+                    <img id="currencyImg" src="Assets/UI/currencyIcon.png">
                     <span id="currencyCounter" style="align-self: start; font-size: 50px;">50</span>
                 </div>
                 <div id="generatorCatUI" class="Selector">
-                    <img id="GeneratorCatImg" src="Assets/Cats/Generator/generatorIdle.png">
+                    <img id="GeneratorCatImg" src="Assets/UI/generatorIcon.png">
                 </div>
                 <div id="basicCatUI" class="Selector">
-                    <img id="basicCatImg" src="Assets/Cats/Basic/basicIdle.png">
+                    <img id="basicCatImg" src="Assets/UI/basicIcon.png">
                 </div>
                 <div id="buffCatUI" class="Selector">
-                    <img id="buffCatImg" src="Assets/Cats/Buff/buffIdle.png">
+                    <img id="buffCatImg" src="Assets/UI/buffIcon.png">
                 </div>
                 <div id="spikeCatUI" class="Selector">
-                    <img id="spikeCatImg" src="Assets/Cats/Spike/spikeIdle.png">
+                    <img id="spikeCatImg" src="Assets/UI/spikeIcon.png">
                 </div>
                 <div id="freezingCatUI" class="Selector">
-                    <img id="freezingCatImg" src="Assets/Cats/Freezing/freezingIdle.png">
+                    <img id="freezingCatImg" src="Assets/UI/freezingIcon.png">
                 </div>
-                <span id="exitUI" style="font-size: 100px;">❌</span>
+                <div id="exitUI">
+                    <img id="exitImg" src="Assets/UI/pauseIcon.png">
+                </div>
             </div>
+
+            <div id="border"></div>
 
             <div id="gameScreen">
                 <div id="field">
