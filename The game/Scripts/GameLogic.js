@@ -2,12 +2,12 @@ class LevelManager {
     levelInfo = {
         currentLevel: undefined,
         lanes: undefined
-    }; //info about level
+    };
     waveInfo = {
         waves: undefined, //array of waves
         currentWave: 0,
         randomDelay: 0
-    }; //info about waves
+    };
     entities = {
         towers: [],
         enemies: [],
@@ -21,14 +21,14 @@ class LevelManager {
     }; //halfed dimensions of sprites which are used to place entities correctly
     buttonControl = new AbortController(); //object which is used to delete all created eventListeners inside LevelManager
     chosenTower = "Generator";
+    currency = 2;
 
     constructor(level, waves) {
-        this.levelInfo = {
-            currentLevel: level,
-            lanes: (level < 3) ? (1 + level * 2) : 5
-        };
+        this.levelInfo.currentLevel = level;
+        this.levelInfo.lanes = (level < 3) ? (1 + level * 2) : 5;
         this.waveInfo.waves = waves;
         this.status = "running";
+        document.getElementById("currencyCounter").innerHTML = this.currency;
 
         this.initEntitiesArrays();
         this.createCells();
@@ -38,8 +38,6 @@ class LevelManager {
     }
 
     update() { //main function where most of the logic takes place and which is called each tick
-        console.log(`Status: ${this.status}`);
-
         if (this.status == "running") {
             this.enemyAction();
             this.entitiesHpManager();
@@ -63,13 +61,14 @@ class LevelManager {
         }
     }
 
-    enemyAction() {
+    enemyAction() { //performs enemies' actions
         for(let lane = 0; lane < this.entities.enemies.length; lane++) {
             for(let e = 0; e < this.entities.enemies[lane].length; e++) {
                 let enemy = this.entities.enemies[lane][e];
                 let relPos =  (enemy.position.x - (this.firstCell.x - cellSize.x / 2)) / cellSize.x;
                 let cell = Math.floor(relPos);
                 let tower = this.entities.towers[lane][cell];
+
                 if(tower != undefined && (0 <= (relPos - cell) && (relPos - cell) <= 0.75)) {
                    tower = enemy.action(tower);
                 } else {
@@ -96,40 +95,46 @@ class LevelManager {
             this.entities.enemies.push([]);
             this.entities.projectiles.push([]);
         }
-        console.log(this)
     }
 
     createButtons() { //assigns actions to buttons
         document.getElementById("exitUI").addEventListener("click", () => this.status = "exit", { signal: this.buttonControl.signal });
         document.getElementById("endButton").addEventListener("click", () => this.status = "exit", { signal: this.buttonControl.signal });
+
         document.getElementById("generatorCatUI").addEventListener("click", () => this.chosenTower = "Generator", { signal: this.buttonControl.signal });
         document.getElementById("basicCatUI").addEventListener("click", () => this.chosenTower = "Basic", { signal: this.buttonControl.signal });
         document.getElementById("buffCatUI").addEventListener("click", () => this.chosenTower = "Buff", { signal: this.buttonControl.signal });
         document.getElementById("spikeCatUI").addEventListener("click", () => this.chosenTower = "Spike", { signal: this.buttonControl.signal });
         document.getElementById("freezingCatUI").addEventListener("click", () => this.chosenTower = "Freezing", { signal: this.buttonControl.signal });
-
         
         document.addEventListener("click", (event) => {
             if(event.target.className == "Cell") {
                 let idParts = event.target.id.split("_");
                 let lane = idParts[1];
                 let cell = idParts[2];
+
                 this.placeTower(lane, cell, this.chosenTower);
             }
         }, { signal: this.buttonControl.signal });
     }
 
-    placeTower(lane, cell, type) {
+    placeTower(lane, cell, type) { //places tower on a cell
         if(this.entities.towers[lane][cell] == undefined) {
             let position = {
                 x: this.firstCell.x + cellSize.x * cell,
                 y: this.firstCell.y + cellSize.y * lane
+            };
+            let id = `t_${type}_${lane}_${cell}`;
+            let tower = new Tower(id, position, type);
+
+            if(tower.cost <= this.currency) {
+                this.entities.towers[lane][cell] = tower;
+                document.getElementById("gameScreen").innerHTML += tower.createTower();
+                this.currency -= tower.cost;
+                document.getElementById("currencyCounter").innerHTML = this.currency;
             }
-            let id = `t_${type}_${lane}_${cell}`
-            this.entities.towers[lane][cell] = new Tower(id, position, type);
-            document.getElementById("gameScreen").innerHTML += this.entities.towers[lane][cell].createTower();
         }
-    }
+    } 
 
     exit() { //removes entities, eventListeners and switches screens
         this.entities.enemies.forEach(lane => lane.forEach(enemy => document.getElementById(enemy.id).remove()));
@@ -158,22 +163,24 @@ class LevelManager {
             y: (this.firstCell.y + cellSize.y * lane) - offset
         };
         let enemy = new Enemy(id, position, type);
+
         this.entities.enemies[lane].push(enemy);
         document.getElementById("gameScreen").innerHTML += enemy.createSprite();
     }
 
-    spawnWaveEnemy() {//spawn random enemy of the current wave
+    spawnWaveEnemy() { //spawn random enemy of the current wave
         let waveNumber = this.waveInfo.currentWave;
         let wave = this.waveInfo.waves[waveNumber];
-        let enemyNumber = Math.floor(Math.random() * wave.toString().length);
+        let enemyNumber = Math.floor(Math.random() * wave.toString().length); //takes random index of a digit from wave
         if(enemyNumber == 0 && (wave % 10) == 0) {
             enemyNumber++;
         }
         if(enemyNumber == 1 && (wave % 100) < 10) {
             enemyNumber++;
-        }
+        } //checks if the index points to an empty slot
         let type, idLeft;
         let randomLane = Math.floor(Math.random() * this.levelInfo.lanes);
+
         switch (enemyNumber) {
             case 0:
                 type = "Basic";
@@ -194,7 +201,7 @@ class LevelManager {
         this.spawnEnemy(`e_${type}_${waveNumber}_${idLeft}`, randomLane, type);
     }
 
-    waveManager() {//spawns and progresses waves and checks lose and win conditions
+    waveManager() { //spawns and progresses waves and checks lose and win conditions
         if (this.waveInfo.currentWave < this.waveInfo.waves.length) {
             let wave = this.waveInfo.waves[this.waveInfo.currentWave];
             if(wave > 0 && this.waveInfo.randomDelay == 0) {
@@ -215,14 +222,14 @@ class LevelManager {
         }
     }
 
-    entitiesHpManager() {//removes entities with no hp
-
+    entitiesHpManager() { //removes entities with no hp
         let enemies = this.entities.enemies;
         let noEnemyHp = entity => entity.hp <= 0;
         while (enemies.some(lane => lane.some(noEnemyHp))) {
             let laneIndex = enemies.findIndex(lane => lane.some(noEnemyHp));
             let enemyIndex = enemies[laneIndex].findIndex(noEnemyHp);
             let enemy = enemies[laneIndex].splice(enemyIndex, 1)[0];
+
             document.getElementById(enemy.id).remove();
         }
 
@@ -233,6 +240,7 @@ class LevelManager {
             let enemyIndex = enemies[laneIndex].findIndex(basicHp);
             let enemy = enemies[laneIndex][enemyIndex];
             let sprite = document.getElementById(enemy.id);
+
             sprite.src = basicSprite;
             enemy.position.x += this.spriteOffset.toughEnemy.x - this.spriteOffset.basicEnemy.x;
             enemy.position.y += this.spriteOffset.toughEnemy.y - this.spriteOffset.basicEnemy.y;
@@ -246,7 +254,7 @@ class LevelManager {
             let laneIndex = towers.findIndex(lane => lane.some(noTowerHp));
             let towerIndex = towers[laneIndex].findIndex(noTowerHp);
             let tower = towers[laneIndex][towerIndex];
-            console.log(tower);
+
             document.getElementById(tower.id).remove();
             towers[laneIndex][towerIndex] = undefined;
         }
@@ -287,6 +295,13 @@ class LevelManager {
                 this.status = "lose";
             }
         }, {signal: this.buttonControl.signal});
+
+        window.addEventListener("keydown", (event) => {
+            if(event.code == "KeyA") {
+                this.currency++;
+                document.getElementById("currencyCounter").innerHTML = this.currency;
+            }
+        }, { signal: this.buttonControl.signal});
     }
 }
 
@@ -421,7 +436,7 @@ class Enemy {
         this.hp = hp;
     }
 
-    action(tower) {
+    action(tower) { //returns damaged tower if ready to attack
         if(this.attack.reload <= 0) {
             tower.hp -= this.attack.damage
             this.attack.reload = this.attack.speed;
@@ -526,7 +541,7 @@ class AudioManager {
         document.getElementById("settingsVolumeReset").addEventListener("click", () => this.resetVolume());
     }
 
-    resetVolume() {
+    resetVolume() { //resets volume to default values
         this.volume.music = this.defaultVol;
         this.volume.sfx = this.defaultVol;
         document.getElementById("settingsCancel").click();

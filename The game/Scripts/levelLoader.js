@@ -1,6 +1,6 @@
 class LevelLoader {
     jsonText; //text from Levels.json
-    jsonInput;
+    jsonInput; //html input element
 
     constructor() {
         this.jsonInput = document.getElementById("jsonInput");
@@ -53,7 +53,7 @@ class LevelLoader {
         tps = Number(savedTps);
     }
 
-    initTpsSetting() {
+    initTpsSetting() { //manages tps setting
         let tpsSlider = document.getElementById("tickInput");
         let tpsOutput = document.querySelector("output[for='tickInput']");
 
