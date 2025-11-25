@@ -5,7 +5,8 @@ class LevelManager {
     }; //info about level
     waveInfo = {
         waves: undefined, //array of waves
-        currentWave: 0
+        currentWave: 0,
+        randomDelay: 0
     }; //info about waves
     entities = {
         towers: [],
@@ -19,6 +20,7 @@ class LevelManager {
         toughEnemy: { x: 95, y: 69 }
     }; //halfed dimensions of sprites which are used to place entities correctly
     buttonControl = new AbortController(); //object which is used to delete all created eventListeners inside LevelManager
+    chosenTower = "Generator";
 
     constructor(level, waves) {
         this.levelInfo = {
@@ -29,24 +31,30 @@ class LevelManager {
         this.status = "running";
 
         this.initEntitiesArrays();
-        this.createButtons();
         this.createCells();
-        this.killEnemyDebug();
+        this.createButtons();
+        this.debug();
         this.update();
-        this.placeTower();
     }
 
     update() { //main function where most of the logic takes place and which is called each tick
         console.log(`Status: ${this.status}`);
 
         if (this.status == "running") {
+            this.enemyAction();
+            this.entitiesHpManager();
             this.waveManager();
-            this.entities.enemies.forEach(lane => lane.forEach(enemy => enemy.move()));
+            
 
             setTimeout(() => this.update(), 1000 / tps);
         } else if (this.status == "win" || this.status == "lose") {
             document.getElementById("endScreen").hidden = false;
             document.getElementById("endMessage").innerHTML = (this.status == "win") ? ("Victory!!!") : ("Defeat...");
+            if(this.status == "win" && availableLevels == this.levelInfo.currentLevel) {
+                localStorage.setItem("level", this.levelInfo.currentLevel + 1);
+                availableLevels = this.levelInfo.currentLevel + 1;
+            }
+
             this.status = "wait";
             setTimeout(() => this.update(), 100);
         } else if (this.status == "wait") {
@@ -56,11 +64,27 @@ class LevelManager {
         }
     }
 
+    enemyAction() {
+        for(let lane = 0; lane < this.entities.enemies.length; lane++) {
+            for(let e = 0; e < this.entities.enemies[lane].length; e++) {
+                let enemy = this.entities.enemies[lane][e];
+                let relPos =  (enemy.position.x - (this.firstCell.x - cellSize.x / 2)) / cellSize.x;
+                let cell = Math.floor(relPos);
+                let tower = this.entities.towers[lane][cell];
+                if(tower != undefined && (0 <= (relPos - cell) && (relPos - cell) <= 0.75)) {
+                   tower = enemy.action(tower);
+                } else {
+                    enemy.move();
+                }
+            }
+        }
+    }
+
     createCells() { //creates html elements which represent cells
         let cells = "";
         for (let i = 0; i < this.levelInfo.lanes; i++) {
             for (let j = 0; j < 9; j++) {
-                cells += `<div id="cell_${i}_${j}" class="Cell"></div>`;
+                cells += `<div id="c_${i}_${j}" class="Cell"></div>`;
             }
         }
         document.getElementById("cells").innerHTML = cells;
@@ -79,10 +103,38 @@ class LevelManager {
     createButtons() { //assigns actions to buttons
         document.getElementById("exitUI").addEventListener("click", () => this.status = "exit", { signal: this.buttonControl.signal });
         document.getElementById("endButton").addEventListener("click", () => this.status = "exit", { signal: this.buttonControl.signal });
+        document.getElementById("generatorCatUI").addEventListener("click", () => this.chosenTower = "Generator", { signal: this.buttonControl.signal });
+        document.getElementById("basicCatUI").addEventListener("click", () => this.chosenTower = "Basic", { signal: this.buttonControl.signal });
+        document.getElementById("buffCatUI").addEventListener("click", () => this.chosenTower = "Buff", { signal: this.buttonControl.signal });
+        document.getElementById("spikeCatUI").addEventListener("click", () => this.chosenTower = "Spike", { signal: this.buttonControl.signal });
+        document.getElementById("freezingCatUI").addEventListener("click", () => this.chosenTower = "Freezing", { signal: this.buttonControl.signal });
+
+        
+        document.addEventListener("click", (event) => {
+            if(event.target.className == "Cell") {
+                let idParts = event.target.id.split("_");
+                let lane = idParts[1];
+                let cell = idParts[2];
+                this.placeTower(lane, cell, this.chosenTower);
+            }
+        }, { signal: this.buttonControl.signal });
+    }
+
+    placeTower(lane, cell, type) {
+        if(this.entities.towers[lane][cell] == undefined) {
+            let position = {
+                x: this.firstCell.x + cellSize.x * cell,
+                y: this.firstCell.y + cellSize.y * lane
+            }
+            let id = `t_${type}_${lane}_${cell}`
+            this.entities.towers[lane][cell] = new Tower(id, position, type);
+            document.getElementById("gameScreen").innerHTML += this.entities.towers[lane][cell].createTower();
+        }
     }
 
     exit() { //removes entities, eventListeners and switches screens
         this.entities.enemies.forEach(lane => lane.forEach(enemy => document.getElementById(enemy.id).remove()));
+        this.entities.towers.forEach(lane => lane.forEach(tower => tower != undefined ? document.getElementById(tower.id).remove() : {}));
         this.buttonControl.abort();
         document.getElementById("endScreen").hidden = true;
         document.getElementById("level").hidden = true;
@@ -111,44 +163,98 @@ class LevelManager {
         document.getElementById("gameScreen").innerHTML += enemy.createSprite();
     }
 
-    spawnWave() {//spawns enemies of the current wave
+    spawnWaveEnemy() {//spawn random enemy of the current wave
         let waveNumber = this.waveInfo.currentWave;
         let wave = this.waveInfo.waves[waveNumber];
-        while (wave > 0) {
-            let type, idLeft;
-            let randomLane = Math.floor(Math.random() * this.levelInfo.lanes);
-            if (wave > 99) {
-                type = "Fast";
-                idLeft = Math.floor(wave / 100);
-                wave -= 100;
-            } else if (wave > 9) {
-                type = "Tough";
-                idLeft = Math.floor(wave / 10);
-                wave -= 10;
-            } else {
+        let enemyNumber = Math.floor(Math.random() * wave.toString().length);
+        if(enemyNumber == 0 && (wave % 10) == 0) {
+            enemyNumber++;
+        }
+        if(enemyNumber == 1 && (wave % 100) < 10) {
+            enemyNumber++;
+        }
+        let type, idLeft;
+        let randomLane = Math.floor(Math.random() * this.levelInfo.lanes);
+        switch (enemyNumber) {
+            case 0:
                 type = "Basic";
                 idLeft = wave;
-                wave--;
-            }
-            this.spawnEnemy(`${type}_${waveNumber}_${idLeft}`, randomLane, type);
+                this.waveInfo.waves[waveNumber]--;
+                break;
+            case 1:
+                type = "Tough";
+                idLeft = Math.floor(wave / 10);
+                this.waveInfo.waves[waveNumber] -= 10;
+                break;
+            case 2:
+                type = "Fast";
+                idLeft = Math.floor(wave / 100);
+                this.waveInfo.waves[waveNumber] -= 100;
+                break;
         }
+        this.spawnEnemy(`e_${type}_${waveNumber}_${idLeft}`, randomLane, type);
     }
 
     waveManager() {//spawns and progresses waves and checks lose and win conditions
-        if (!this.entities.enemies.some(lane => lane.length > 0)) {
-            if (this.waveInfo.currentWave < this.waveInfo.waves.length) {
-                this.spawnWave();
-                this.waveInfo.currentWave++;
+        if (this.waveInfo.currentWave < this.waveInfo.waves.length) {
+            let wave = this.waveInfo.waves[this.waveInfo.currentWave];
+            if(wave > 0 && this.waveInfo.randomDelay == 0) {
+                this.spawnWaveEnemy();
+                this.waveInfo.randomDelay = Math.floor((Math.random() * 2 + 1) * tps);
+            } else if(wave == 0) {
+                if(this.entities.enemies.every(lane => lane.length == 0)) {
+                    this.waveInfo.currentWave++;
+                }
             } else {
-                this.status = "win";
+                this.waveInfo.randomDelay--;
             }
-        } else if (this.entities.enemies.some(lane => lane.some(enemy => enemy.position.x < (this.firstCell.x - cellSize.x / 2)))) {
-            this.status = "lose";
+            if(this.entities.enemies.some(lane => lane.some(enemy => enemy.position.x <= this.firstCell.x - cellSize.x / 2))) {
+                this.status = "lose";
+            }
+        } else {
+            this.status = "win";
         }
     }
 
-    killEnemyDebug() { //temporary function to kill enemies with a press of the key "S"
-        window.addEventListener("keydown", (event) => {
+    entitiesHpManager() {//removes entities with no hp
+
+        let enemies = this.entities.enemies;
+        let noEnemyHp = entity => entity.hp <= 0;
+        while (enemies.some(lane => lane.some(noEnemyHp))) {
+            let laneIndex = enemies.findIndex(lane => lane.some(noEnemyHp));
+            let enemyIndex = enemies[laneIndex].findIndex(noEnemyHp);
+            let enemy = enemies[laneIndex].splice(enemyIndex, 1)[0];
+            document.getElementById(enemy.id).remove();
+        }
+
+        let basicHp = enemy => (enemy.type == "Tough" && enemy.hp <= 50 && document.getElementById(enemy.id).src.includes("tough"));
+        while (enemies.some(lane => lane.some(basicHp))) {
+            let basicSprite = "Assets/Enemies/basic_enemy.png";
+            let laneIndex = enemies.findIndex(lane => lane.some(basicHp));
+            let enemyIndex = enemies[laneIndex].findIndex(basicHp);
+            let enemy = enemies[laneIndex][enemyIndex];
+            let sprite = document.getElementById(enemy.id);
+            sprite.src = basicSprite;
+            enemy.position.x += this.spriteOffset.toughEnemy.x - this.spriteOffset.basicEnemy.x;
+            enemy.position.y += this.spriteOffset.toughEnemy.y - this.spriteOffset.basicEnemy.y;
+            sprite.style.left = enemy.position.x.toString() + "px";
+            sprite.style.top = enemy.position.y.toString() + "px";
+        }
+
+        let towers = this.entities.towers;
+        let noTowerHp = tower => (tower != undefined ? tower.hp <= 0 : false);
+        while(towers.some(lane => lane.some(noTowerHp))) {
+            let laneIndex = towers.findIndex(lane => lane.some(noTowerHp));
+            let towerIndex = towers[laneIndex].findIndex(noTowerHp);
+            let tower = towers[laneIndex][towerIndex];
+            console.log(tower);
+            document.getElementById(tower.id).remove();
+            towers[laneIndex][towerIndex] = undefined;
+        }
+    }
+
+    debug() { //temporary function to debug
+        window.addEventListener("keydown", (event) => { // kill enemies with a press of the key "S"
             if (event.code == "KeyS") {
                 let enemies = this.entities.enemies;
                 for (let i = 0; i < enemies.length; i++) {
@@ -160,38 +266,29 @@ class LevelManager {
                 }
             }
         }, { signal: this.buttonControl.signal });
-    }
 
-    placeTower(){
-        let currCell;
-        let tempStorage = ""; // temporary storage for tower type
-        document.addEventListener("click", function(event) { //defines clicked tower
-            let targetElement = event.target;
-            while (targetElement && !targetElement.classList.contains('Selector')) {
-                targetElement = targetElement.parentElement;
-            }
-            if (targetElement && targetElement.id) {
-                Tower.type = targetElement.id;
-                tempStorage = targetElement.id;
-                console.log(Tower.type);
-            }
-        })
 
-        document.addEventListener("click", function(event) { //defines id of clicked cell
-            let targetElement = event.target;
-            while (targetElement && !targetElement.classList.contains('Cell')) {
-                targetElement = targetElement.parentElement;
+        window.addEventListener("keydown", (event) => { //damage enemies with a press of the key "D"
+            if (event.code == "KeyD") {
+                let enemies = this.entities.enemies;
+                for (let i = 0; i < enemies.length; i++) {
+                    if (enemies[i].length > 0) {
+                        this.entities.enemies[i][0].hp -= 10;
+                        break;
+                    }
+                }
             }
-            if (targetElement && targetElement.id) {
-                currCell = targetElement.id;
-                console.log(targetElement.id)
+        }, { signal: this.buttonControl.signal });
+
+        window.addEventListener("keydown", (event) => {
+            if(event.code == "KeyW") {
+                this.status = "win";
             }
-        })
+            if(event.code == "KeyL") {
+                this.status = "lose";
+            }
+        }, {signal: this.buttonControl.signal});
     }
-    /*немного хз как это распихать правильно. идея в том, 
-      что я кликаю на перса, игра это запомнинает, потом
-      я кликаю на клетку, и там ставится башня. ну я может
-      еще покумекаю над этим :З */
 }
 
 class Tower {
@@ -201,12 +298,15 @@ class Tower {
     hp;
     cost;
     buff;
+    damage;
+    attackRecharge;
 
     constructor(id, position, type) {
         this.id = id;
         this.position.x = position.x;
         this.position.y = position.y;
         this.type = type;
+        this.attackRecharge = 0;
 
         switch (this.type) {
             case "basicCatUI"://обычный
@@ -236,27 +336,127 @@ class Tower {
     createTower(){
         let src;
         switch(this.type){
-            case "basicCatUI":
-                src = "Assets/Cats/angry_cat.png";
+            case "Basic":
+                src = "Assets/Cats/Basic/basicIdle.png";
                 break;
-            case "buff":
-                src = "Assets/Cats/buff_cat.png";
+            case "Buff":
+                src = "Assets/Cats/Buff/buffIdle.png";
                 break;
-            case "GeneratorCatUI":
-                src = "Assets/Cats/heart_cat.png";
+            case "Generator":
+                src = "Assets/Cats/Generator/generatorIdle.png";
                 break;
-            case "lazy":
-                src = "Assets/Cats/lazy_cat.png";
+            case "Freezing":
+                src = "Assets/Cats/Freezing/freezingIdle.png";
                 break;
-            case "shield":
-                src = "Assets/Cats/shield_cat.png";
+            case "Spike":
+                src = "Assets/Cats/Spike/spikeIdle.png";
                 break;
         }
         return `<img id="${this.id}" src="${src}" style="left: ${this.position.x}px; top: ${this.position.y}px;">`;
-    }   
+    }  
+    
+    action(enemy){
+        let actionResult;
+        let newProjectile;
+        //if (this.attackRecharge == 0){
+            switch(this.type){
+                case "Basic":
+                    let targetEnemyBasic = this.findTarget(enemy)
+                    if (targetEnemyBasic){
+                        let projectile = new Projectile('basicProjectile', 1, 10, targetEnemyBasic, this.position.x);
+                        actionResult = projectile;
+                        projectile.move();
+                    } else { 
+                        console.log("no target")
+                    }
+                    break;
+                case "Generator":
+                    //
+                    break;
+                case "Buff":
+                    //
+                    break;
+                case "Spike":
+                    //
+                    break;
+                case "Freezing":
+                    newProjectile = this.newProj("FreezingProjectile");
+                    console.log(`created ${newProjectile}`)
+                    break;
+            }
+        //}
+    }
+
+    newProj(type){let prt = new Projectile(type, speed)}
+
+    findTarget(enemy){
+        let closestTarget = null;
+        let minX = 10000;
+        if (enemy.position.x < minX){
+                minX = enemy.position.x;
+                closestTarget = enemy;
+            }
+        return closestTarget;
+    }
+
+    /*towerAction(){
+        let enemy;
+        for(let lane = 0; lane < this.entities.enemies.length; lane++) {
+            for(let e = 0; e < this.entities.enemies[lane].length; e++) {
+                enemy = this.entities.enemies[lane][e]; 
+            }
+        }
+
+        for(let lane = 0; lane < this.entities.towers.length; lane++) {
+            for(let e = 0; e < this.entities.towers[lane].length; e++) {
+                let tower = this.entities.towers[lane][e];
+                if (tower) {
+                    if ((enemy.position.x - tower.position.x) < 900) {
+                        tower.action(enemy);
+                        //tower.findTarget(enemy)
+                        //console.log((enemy.position.x - tower.position.x))
+                        //tower.findTarget(enemy, lane);
+                    }
+                }
+               
+            }
+        }
+    }
+        
+    this.towerAction();*/
 }
 
 class Projectile {
+    projectileX;
+    damage;
+    speed;
+    target;
+    type;
+    constructor(type, speed, damage, target, projectileX){
+        this.projectileX = projectileX;
+        this.type = type;
+        this.speed = speed;
+        this.damage = damage;
+        this.target = target;
+        console.log(`Projectile. type: ${this.type} ${this.projectileX}`)
+    }
+
+    createProjectile(){
+        switch(this.type){
+            case "basicProjectile":
+                src = "Assets/Cats/Basic/basicIdle.png";
+                break;
+            case "freezing projectile":
+                src = "Assets/Cats/Basic/basicIdle.png";
+                break;
+        }
+    }
+
+    move(){
+        this.projectileX += this.speed;
+        console.log(`mooving...: ${this.projectileX}`)
+
+    }
 }
 
 class Enemy {
@@ -311,11 +511,28 @@ class Enemy {
         let sprite = document.getElementById(this.id);
         this.position.x -= this.speed * cellSize.x / tps;
         sprite.style.left = this.position.x.toString() + "px";
+        if (!sprite.src.includes("tough")) {
+            let deg = Number(sprite.style.rotate.replace("deg", "")) - 212 * this.speed / tps;
+            sprite.style.rotate = deg.toString() + "deg";
+        }
+        if (this.type == "Fast") {
+            this.speed = 1.2 - (this.hp - 10) / 40;
+        }
     }
 
     setStats(speed, hp) { //sets speed and hp of an enemy
         this.speed = speed;
         this.hp = hp;
+    }
+
+    action(tower) {
+        if(this.attack.reload <= 0) {
+            tower.hp -= this.attack.damage
+            this.attack.reload = this.attack.speed;
+            return tower;
+        } else {
+            this.attack.reload--;
+        }
     }
 }
 
@@ -324,6 +541,7 @@ class AudioManager {
         music: undefined,
         sfx: undefined
     };
+    defaultVol = 0.5;
     UI = {
         click: new Audio("Assets/Audio/testSound.ogg"),
         towerPlace: new Audio("Assets/Audio/testSound.ogg")
@@ -356,11 +574,10 @@ class AudioManager {
     getVolume() { //gets volume from the localStorage or sets default values with writing it into the localStorage
         let sfxVol = localStorage.getItem("sfxVol");
         let musicVol = localStorage.getItem("musicVol");
-        if (sfxVol == null || musicVol == null) {
-            let defaultVol = 0.5;
-            localStorage.setItem("sfxVol", defaultVol);
-            localStorage.setItem("musicVol", defaultVol);
-            return { music: 0.5, sfx: 0.5 };
+        if (sfxVol === null || musicVol === null) {
+            localStorage.setItem("sfxVol", this.defaultVol);
+            localStorage.setItem("musicVol", this.defaultVol);
+            return { music: this.defaultVol, sfx: this.defaultVol };
         } else {
             return { music: Number(musicVol), sfx: Number(sfxVol) };
         }
@@ -410,6 +627,14 @@ class AudioManager {
             sfxSlider.value = this.volume.sfx;
             sfxOutput.textContent = sfxSlider.value;
         });
+        document.getElementById("settingsVolumeReset").addEventListener("click", () => this.resetVolume());
+    }
+
+    resetVolume() {
+        this.volume.music = this.defaultVol;
+        this.volume.sfx = this.defaultVol;
+        document.getElementById("settingsCancel").click();
+        document.getElementById("settingsApply").click();
     }
 
     testSound() { //temporary function to test sound
