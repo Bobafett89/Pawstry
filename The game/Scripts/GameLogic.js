@@ -17,6 +17,11 @@ class LevelManager {
     status; //variable which indicates the state of a game
     firstCell = { x: 176, y: 413 }; //position of the center of the first (top-left) cell
     spriteOffset = {
+        generatorTower: { x: 120, y: 104},
+        basicTower: { x: 120, y: 96},
+        buffTower: { x: 104, y: 96},
+        spikeTower: { x: 136, y: 112},
+        freezingTower: { x: 112, y: 80},
         basicEnemy: { x: 53, y: 53 },
         toughEnemy: { x: 95, y: 69 }
     }; //halfed dimensions of sprites which are used to place entities correctly
@@ -146,9 +151,27 @@ class LevelManager {
 
     placeTower(lane, cell, type) { //places tower on a cell
         if(this.entities.towers[lane][cell] == undefined) {
+            let offset;
+            switch(type) {
+                case "Generator":
+                    offset = this.spriteOffset.generatorTower;
+                    break;
+                case "Basic":
+                    offset = this.spriteOffset.basicTower;
+                    break;
+                case "Buff":
+                    offset = this.spriteOffset.buffTower;
+                    break;
+                case "Spike":
+                    offset = this.spriteOffset.spikeTower;
+                    break;
+                case "Freezing":
+                    offset = this.spriteOffset.freezingTower;
+                    break;
+            }
             let position = {
-                x: this.firstCell.x + cellSize.x * cell,
-                y: this.firstCell.y + cellSize.y * lane
+                x: this.firstCell.x + cellSize.x * cell - offset.x,
+                y: this.firstCell.y + cellSize.y * lane - offset.y - cellSize.y / 5
             };
             let id = `t_${type}_${lane}_${cell}`;
             let tower = new Tower(id, position, type);
