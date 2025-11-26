@@ -1,13 +1,17 @@
 body {
     width: 1920px;
     height: 1080px;
-    background-color: grey;
+    background: linear-gradient(rgb(255, 231, 198) 10%, rgb(255, 196, 204) 90%);
     border-bottom: 2px solid black;
     border-right: 2px solid black;
     margin: 0;
     overflow: hidden;
 }
 
-body > div {
+body>div {
     position: absolute;
+}
+
+button, input[type="checkbox"] { 
+    cursor: pointer;
 }

@@ -1,11 +1,25 @@
 #levelUI {
     width: 1920px;
     height: 275px;
-    border-bottom: 5px solid black;
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     justify-items: center;
     align-items: center;
+    background: linear-gradient(rgba(255, 123, 103, 0.29), rgba(255, 98, 122, 0.29));
+    &>div>span {
+        font-size: 50px;
+    }
+}
+
+#exitUI {
+    cursor: pointer;
+    grid-column-start: 7;
+    &:hover {
+        filter: contrast(0.75);
+    }
+    &:active {
+        filter: contrast(1);
+    }
 }
 
 #currency {
@@ -16,12 +30,24 @@
 }
 
 .Selector {
-    width: 200px;
-    height: 200px;
-    border: 5px solid black;
+    cursor: pointer;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
+    text-align: center;
+    &[hidden] {
+        display: none;
+    }
+    &[chosen="false"] {
+        filter: brightness(0.5);
+    }
+}
+
+#border {
+    width: 1920px;
+    height: 5px;
+    background: linear-gradient(to right, rgb(69, 0, 39), rgb(255, 1, 146) 40%);
 }
 
 #gameScreen {
@@ -74,9 +100,9 @@
 
 .Cell {
     &:hover {
-        background-color: rgba(0, 0, 128, 0.2);
+        background-color: rgba(0, 0, 0, 0.15);
     };
     &:active {
-        background-color: rgba(128, 0, 0, 0.2);
+        background-color: rgba(63, 63, 63, 0.15);
     };
 }
