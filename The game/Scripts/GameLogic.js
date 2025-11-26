@@ -503,10 +503,10 @@ class Projectile {
 
     createProjectile(){
         switch(this.type){
-            case "basicProjectile":
+            case "BasicProjectile":
                 src = "Assets/Cats/Basic/basicIdle.png";
                 break;
-            case "freezingProjectile":
+            case "FreezingProjectile":
                 src = "Assets/Cats/Basic/basicIdle.png";
                 break;
         }
