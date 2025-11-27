@@ -48,7 +48,6 @@ class LevelManager {
             this.enemyAction();
             this.entitiesHpManager();
             this.waveManager();
-            this.towerAction();
 
             setTimeout(() => this.update(), 1000 / tps);
         } else if (this.status == "win" || this.status == "lose") {
@@ -368,14 +367,17 @@ class Tower {
         speed: tps / 2 }
     buffed = false;
 
-    lane = this.id.split("_")[2];
-    cell = this.id.split("_")[3];
+    lane;
+    cell;
+    projectileCounter = 0;
 
     constructor(id, position, type) {
         this.id = id;
         this.position.x = position.x;
         this.position.y = position.y;
         this.type = type;
+        this.lane = this.id.split("_")[2];
+        this.cell = this.id.split("_")[3];
 
         switch (this.type) {
             case "Basic"://обычный
@@ -433,9 +435,10 @@ class Tower {
                         x: this.position.x,
                         y: this.position.y
                     }
-                    let idB = `p_${"BasicProjectile"}_${this.lane}_${this.cell}`;
+                    let idB = `p_${"BasicProjectile"}_${this.lane}_${this.cell}_${this.projectileCounter}`;
+                    this.projectileCounter++;
                     let projectileB = new Projectile(idB, positionB, "BasicProjectile");
-                    object.entities.projectiles[this.lane][this.cell].push(projectileB);
+                    object.push(projectileB);
                     if (this.buffed)
                         this.attack.reload = this.attack.speed/2;
                     else
@@ -481,13 +484,6 @@ class Tower {
     }
 
     /*towerAction(){
-        let enemy;
-        for(let lane = 0; lane < this.entities.enemies.length; lane++) {
-            for(let e = 0; e < this.entities.enemies[lane].length; e++) {
-                enemy = this.entities.enemies[lane][e]; 
-            }
-        }
-
         for(let lane = 0; lane < this.entities.towers.length; lane++) {
             for(let e = 0; e < this.entities.towers[lane].length; e++) {
                 let tower = this.entities.towers[lane][e];
@@ -498,11 +494,10 @@ class Tower {
                             console.log(this.currency)
                             break;
                         case "Basic":
-                            if ((enemy.position.x - tower.position.x) < 800) {
-                                tower.action(this);
-                                let projectile = this.entities.projectiles[tower.id.split("_")[2]][tower.id.split("_")[3]]
-                                //console.log(projectile)
+                            if (this.entities.enemies[lane].length > 0) {
+                                tower.action(this.entities.projectiles[lane]);
                             } 
+                            break;
                     }
                 }
             }
@@ -533,6 +528,7 @@ class Projectile {
     }
 
     createProjectile(){
+        let src;
         switch(this.type){
             case "BasicProjectile":
                 src = "Assets/Cats/Basic/basicIdle.png";
