@@ -81,6 +81,10 @@ class LevelManager {
 
                 if(tower != undefined && (0 <= (relPos - cell) && (relPos - cell) <= 0.75)) {
                    tower = enemy.action(tower);
+                   if(document.getElementById(enemy.id).src.includes("tough") && enemy.position.y != enemy.jump.ground) {
+                    enemy.position.y = enemy.jump.ground;
+                    document.getElementById(enemy.id).style.top = enemy.position.y.toString() + "px";
+                   }
                 } else {
                     enemy.move();
                 }
@@ -340,6 +344,7 @@ class LevelManager {
 
             sprite.src = basicSprite;
             enemy.position.x += this.spriteOffset.toughEnemy.x - this.spriteOffset.basicEnemy.x;
+            enemy.position.y = enemy.jump.ground;
             enemy.position.y += this.spriteOffset.toughEnemy.y - this.spriteOffset.basicEnemy.y;
             sprite.style.left = enemy.position.x.toString() + "px";
             sprite.style.top = enemy.position.y.toString() + "px";
@@ -581,6 +586,12 @@ class Projectile {
 }
 
 class Enemy {
+    jump = {
+        gravity: cellSize.y * 9 / 8,
+        initialSpeed: cellSize.y * 3 / 4,
+        speed: cellSize.y * 3 / 4,
+        ground: undefined
+    }
     id;
     type;
     speed; //speed of an enemy in cells per second
@@ -598,6 +609,7 @@ class Enemy {
         this.position.x = position.x;
         this.position.y = position.y;
         this.type = type;
+        this.jump.ground = this.position.y;
 
         switch (this.type) {
             case "Basic":
@@ -635,6 +647,14 @@ class Enemy {
         if (!sprite.src.includes("tough")) {
             let deg = Number(sprite.style.rotate.replace("deg", "")) - 212 * this.speed / tps;
             sprite.style.rotate = deg.toString() + "deg";
+        } else {
+            this.position.y -= this.jump.speed / tps;
+            this.jump.speed -= this.jump.gravity / tps;
+            if(this.position.y >= this.jump.ground) {
+                this.jump.speed = this.jump.initialSpeed;
+                this.position.y = this.jump.ground;
+            }
+            sprite.style.top = this.position.y.toString() + "px";
         }
         if (this.type == "Fast") {
             this.speed = 1.2 - (this.hp - 10) / 40;
