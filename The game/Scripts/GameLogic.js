@@ -190,6 +190,9 @@ class LevelManager {
         this.entities.enemies.forEach(lane => lane.forEach(enemy => document.getElementById(enemy.id).remove()));
         this.entities.towers.forEach(lane => lane.forEach(tower => tower != undefined ? document.getElementById(tower.id).remove() : {}));
         this.buttonControl.abort();
+        audioManager.music.menu.play();
+        audioManager.music.level.pause();
+        audioManager.music.level.load();
         document.getElementById("endScreen").hidden = true;
         document.getElementById("level").hidden = true;
         document.getElementById("mainMenu").hidden = false;
@@ -272,7 +275,7 @@ class LevelManager {
                                     for (let j = -1; j<2; j ++){
                                         if ( !(t == 0 && j == -1) && !(t == 8 && j == 1)){
                                             let checkedTower = this.entities.towers[lane+i][t+j];
-                                            if (checkedTower != undefined && checkedTower.type != "Buff");
+                                            if (checkedTower != undefined && checkedTower.type != "Buff")
                                                 buffedTowers.push(this.entities.towers[lane+i][t+j]);
                                         }
                                     }
@@ -283,7 +286,8 @@ class LevelManager {
                         case "Spike":
                             let attackedEnemies = [];
                             for (let i = 0; i < this.entities.enemies[lane].length; i++) {
-                                let dist =  this.entities.enemies[lane][i].position.x - tower.position.x;
+                                let startOfCell = this.firstCell.x + t * cellSize.x - cellSize.x / 2;
+                                let dist =  this.entities.enemies[lane][i].position.x - startOfCell;
                                 if (dist >=0 && dist <= 0.75*cellSize.x) {attackedEnemies.push(this.entities.enemies[lane][i])}
                             }
                             tower.action(attackedEnemies);
@@ -662,22 +666,26 @@ class AudioManager {
         click: new Audio("Assets/Audio/testSound.ogg"),
         towerPlace: new Audio("Assets/Audio/testSound.ogg")
     };
-    tower = {
-        shoot: new Audio("Assets/Audio/testSound.ogg"),
-        generate: new Audio("Assets/Audio/testSound.ogg"),
-        buff: new Audio("Assets/Audio/testSound.ogg")
+    towerAction = {
+        shoot: new Audio("Assets/Audio/tower_attack.ogg"),
+        generate: new Audio("Assets/Audio/currency_generation.ogg"),
+        buff: new Audio("Assets/Audio/buff_sound.ogg")
     };
     hit = {
-        enemy: new Audio("Assets/Audio/testSound.ogg"),
-        tower: new Audio("Assets/Audio/testSound.ogg")
+        enemy: new Audio("Assets/Audio/enemy_was_attacked.ogg"),
+        tower: new Audio("Assets/Audio/tower_was_attacked.ogg")
+    };
+    death = {
+        enemy: new Audio(),
+        tower: new Audio("Assets/Audio/tower_defeat.ogg")
     };
     end = {
         win: new Audio("Assets/Audio/testSound.ogg"),
-        lose: new Audio("Assets/Audio/testSound.ogg")
+        lose: new Audio("Assets/Audio/gameover.ogg")
     };
     music = {
-        menu: new Audio(),
-        level: new Audio()
+        menu: new Audio("Assets/Audio/menu_sound.ogg"),
+        level: new Audio("Assets/Audio/game_sound.ogg")
     };
 
     constructor() {
@@ -703,9 +711,9 @@ class AudioManager {
         this.UI.click.volume = this.volume.sfx;
         this.UI.towerPlace.volume = this.volume.sfx;
 
-        this.tower.shoot.volume = this.volume.sfx;
-        this.tower.generate.volume = this.volume.sfx;
-        this.tower.buff.volume = this.volume.sfx;
+        this.towerAction.shoot.volume = this.volume.sfx;
+        this.towerAction.generate.volume = this.volume.sfx;
+        this.towerAction.buff.volume = this.volume.sfx;
 
         this.hit.enemy.volume = this.volume.sfx;
         this.hit.tower.volume = this.volume.sfx;

@@ -11,6 +11,7 @@ class LevelLoader {
         this.initScreenSetting();
         this.loadProgress();
         this.initMenuButtons();
+        this.startMusic();
     }
 
     async fileLoad() { //function which checks if chosen file is correct, if yes copies text into "jsonText" and transitions to level choice
@@ -29,6 +30,9 @@ class LevelLoader {
         this.switchScreens("levelSelect", "titleScreen");
         this.switchScreens("mainMenu", "level")
         this.levelUnlocks(level);
+        audioManager.music.menu.pause();
+        audioManager.music.menu.load();
+        audioManager.music.level.play();
         new LevelManager(level, waves);
     }
     
@@ -134,5 +138,16 @@ class LevelLoader {
         document.getElementById("BuffCatUI").hidden = level < 2;
         document.getElementById("SpikeCatUI").hidden = level < 4;
         document.getElementById("FreezingCatUI").hidden = level < 7;
+    }
+
+    startMusic() {
+        audioManager.music.menu.loop = true;
+        audioManager.music.level.loop = true;
+        window.addEventListener("click", () => {
+            audioManager.music.menu.play();
+        }, {once: true});
+    }
+
+    switchMusic() {
     }
 }
