@@ -22,8 +22,11 @@ class LevelManager {
         buffTower: { x: 104, y: 96},
         spikeTower: { x: 136, y: 112},
         freezingTower: { x: 112, y: 80},
-        basicEnemy: { x: 53, y: 53 },
-        toughEnemy: { x: 95, y: 69 }
+        basicEnemy: { x: 54, y: 55 },
+        toughEnemy: { x: 96, y: 70 },
+        fastEnemy: {x: 54, y: 55},
+        basicProjectile: {x: 54, y: 33},
+        freezingProjectile: {x: 54, y: 33}
     }; //halfed dimensions of sprites which are used to place entities correctly
     buttonControl = new AbortController(); //object which is used to delete all created eventListeners inside LevelManager
     chosenTower = "Generator";
@@ -45,21 +48,28 @@ class LevelManager {
 
     update() { //main function where most of the logic takes place and which is called each tick
         if (this.status == "running") {
-            this.enemyAction();
-            this.entitiesHpManager();
             this.waveManager();
+            this.enemyAction();
             this.towerAction();
+            this.projectileAction();
+            this.entitiesHpManager();
 
             setTimeout(() => this.update(), 1000 / tps);
         } else if (this.status == "win" || this.status == "lose") {
             document.getElementById("endScreen").hidden = false;
             document.getElementById("endMessage").innerHTML = (this.status == "win") ? ("Victory!!!") : ("Defeat...");
-            if(this.status == "win" && availableLevels == this.levelInfo.currentLevel) {
-                localStorage.setItem("level", this.levelInfo.currentLevel + 1);
-                availableLevels = this.levelInfo.currentLevel + 1;
-                if(availableLevels < this.levelInfo.maxLevel) {
-                    document.getElementById(`levelLoad${availableLevels}`).hidden = false;
+            if(this.status == "win") {
+                audioManager.end.win.play();
+
+                if(availableLevels == this.levelInfo.currentLevel) {
+                    let newLevel = this.levelInfo.currentLevel + 1;
+
+                    localStorage.setItem("level", newLevel);
+                    availableLevels = newLevel;
+                    document.getElementById(`levelLoad${availableLevels}`).hidden = availableLevels >= this.levelInfo.maxLevel;
                 }
+            } else {
+                audioManager.end.lose.play();
             }
 
             this.status = "wait";
@@ -72,18 +82,23 @@ class LevelManager {
     }
 
     enemyAction() { //performs enemies' actions
-        for(let lane = 0; lane < this.entities.enemies.length; lane++) {
-            for(let e = 0; e < this.entities.enemies[lane].length; e++) {
+        for (let lane = 0; lane < this.entities.enemies.length; lane++) {
+            for (let e = 0; e < this.entities.enemies[lane].length; e++) {
                 let enemy = this.entities.enemies[lane][e];
                 let relPos =  (enemy.position.x - (this.firstCell.x - cellSize.x / 2)) / cellSize.x;
                 let cell = Math.floor(relPos);
                 let tower = this.entities.towers[lane][cell];
 
                 if(tower != undefined && (0 <= (relPos - cell) && (relPos - cell) <= 0.75)) {
-                   tower = enemy.action(tower);
+                   enemy.action(tower);
+                   if(document.getElementById(enemy.id).src.includes("tough") && enemy.position.y != enemy.jump.ground) {
+                    enemy.position.y = enemy.jump.ground;
+                    document.getElementById(enemy.id).style.top = enemy.position.y.toString() + "px";
+                   }
                 } else {
                     enemy.move();
                 }
+                enemy.stateChange();
             }
         }
     }
@@ -111,7 +126,7 @@ class LevelManager {
         document.getElementById("exitUI").addEventListener("click", () => this.status = "exit", { signal: this.buttonControl.signal });
         document.getElementById("endButton").addEventListener("click", () => this.status = "exit", { signal: this.buttonControl.signal });
 
-        for(let i = 0; i < 5; i++) {
+        for (let i = 0; i < 5; i++) {
             let cat;
             switch(i) {
                 case 0:
@@ -130,14 +145,14 @@ class LevelManager {
                     cat = "Freezing";
                     break;
                 }
-                let chosen = cat == "Generator" ? true : false;
+                let chosen = cat == "Generator";
                 document.getElementById(`${cat}CatUI`).addEventListener("click", () => {
                     document.getElementById(`${this.chosenTower}CatUI`).setAttribute("chosen", false);
                     this.chosenTower = cat;
                     document.getElementById(`${cat}CatUI`).setAttribute("chosen", true);
                 }, { signal: this.buttonControl.signal });
                 document.getElementById(`${cat}CatUI`).setAttribute("chosen", chosen);
-            }
+        }
         
         document.addEventListener("click", (event) => {
             if(event.target.className == "Cell") {
@@ -182,14 +197,45 @@ class LevelManager {
                 document.getElementById("gameScreen").innerHTML += tower.createTower();
                 this.currency -= tower.cost;
                 document.getElementById("currencyCounter").innerHTML = this.currency;
+                audioManager.UI.towerPlace.play();
             }
         }
     } 
 
+    projectileAction() {
+        for(let lane = 0; lane < this.levelInfo.lanes; lane++) {
+            for(let p = 0; p < this.entities.projectiles[lane].length; p++) {
+                let projectile = this.entities.projectiles[lane][p];
+                projectile.move();
+                if(projectile.position.x <= 1920 - this.spriteOffset.basicProjectile.x){
+                    for(let e = 0; e < this.entities.enemies[lane].length; e++) {
+                        let enemy = this.entities.enemies[lane][e];
+                        let dist = projectile.position.x + this.spriteOffset.basicProjectile.x - enemy.position.x;
+                        if(dist >= 0 && dist <= this.spriteOffset.toughEnemy.x * 2) {
+                            projectile.action(enemy);
+                            this.entities.projectiles[lane].splice(p, 1);
+                            document.getElementById(projectile.id).remove();
+                            p--;
+                            break;
+                        }
+                    }
+                } else {
+                    this.entities.projectiles[lane].splice(p, 1);
+                    document.getElementById(projectile.id).remove();
+                    p--;
+                }
+            }
+        }
+    }
+
     exit() { //removes entities, eventListeners and switches screens
         this.entities.enemies.forEach(lane => lane.forEach(enemy => document.getElementById(enemy.id).remove()));
         this.entities.towers.forEach(lane => lane.forEach(tower => tower != undefined ? document.getElementById(tower.id).remove() : {}));
+        this.entities.projectiles.forEach(lane => lane.forEach(projectile => document.getElementById(projectile.id).remove()));
         this.buttonControl.abort();
+        audioManager.music.menu.play();
+        audioManager.music.level.pause();
+        audioManager.music.level.load();
         document.getElementById("endScreen").hidden = true;
         document.getElementById("level").hidden = true;
         document.getElementById("mainMenu").hidden = false;
@@ -205,7 +251,7 @@ class LevelManager {
                 offset = this.spriteOffset.toughEnemy.y;
                 break;
             case "Fast":
-                offset = this.spriteOffset.basicEnemy.y;
+                offset = this.spriteOffset.fastEnemy.y;
                 break;
         }
         let position = {
@@ -251,6 +297,50 @@ class LevelManager {
         this.spawnEnemy(`e_${type}_${waveNumber}_${idLeft}`, randomLane, type);
     }
 
+    towerAction(){
+        for(let lane = 0; lane < this.entities.towers.length; lane++) {
+            for(let t = 0; t < this.entities.towers[lane].length; t++) {
+                let tower = this.entities.towers[lane][t];
+                if (tower) {
+                    switch(tower.type){
+                        case "Generator":
+                            tower.action(this);
+                            break;
+                        case "Basic":
+                            if (this.entities.enemies[lane].length > 0) {
+                                tower.action(this.entities.projectiles[lane]);
+                            } 
+                            break;
+                        case "Buff":
+                            let buffedTowers = [];
+                            for (let i = -1; i < 2; i++){
+                                if ( !(lane == 0 && i == -1) && !(lane == this.levelInfo.lanes-1 && i == 1)){
+                                    for (let j = -1; j<2; j ++){
+                                        if ( !(t == 0 && j == -1) && !(t == 8 && j == 1)){
+                                            let checkedTower = this.entities.towers[lane+i][t+j];
+                                            if (checkedTower != undefined && checkedTower.type != "Buff")
+                                                buffedTowers.push(this.entities.towers[lane+i][t+j]);
+                                        }
+                                    }
+                                }
+                            }
+                            tower.action(buffedTowers);
+                            break;
+                        case "Spike":
+                            let attackedEnemies = [];
+                            for (let i = 0; i < this.entities.enemies[lane].length; i++) {
+                                let startOfCell = this.firstCell.x + t * cellSize.x - cellSize.x / 2;
+                                let dist =  this.entities.enemies[lane][i].position.x - startOfCell;
+                                if (dist >=0 && dist <= 0.75*cellSize.x) {attackedEnemies.push(this.entities.enemies[lane][i])}
+                            }
+                            tower.action(attackedEnemies);
+                            break;
+                    }
+                }
+            }
+        }
+    }
+
     waveManager() { //spawns and progresses waves and checks lose and win conditions
         if (this.waveInfo.currentWave < this.waveInfo.waves.length) {
             let wave = this.waveInfo.waves[this.waveInfo.currentWave];
@@ -281,11 +371,12 @@ class LevelManager {
             let enemy = enemies[laneIndex].splice(enemyIndex, 1)[0];
 
             document.getElementById(enemy.id).remove();
+            audioManager.death.enemy.play();
         }
 
         let basicHp = enemy => (enemy.type == "Tough" && enemy.hp <= 50 && document.getElementById(enemy.id).src.includes("tough"));
         while (enemies.some(lane => lane.some(basicHp))) {
-            let basicSprite = "Assets/Enemies/basic_enemy.png";
+            let basicSprite = "Assets/Enemies/basic.png";
             let laneIndex = enemies.findIndex(lane => lane.some(basicHp));
             let enemyIndex = enemies[laneIndex].findIndex(basicHp);
             let enemy = enemies[laneIndex][enemyIndex];
@@ -293,6 +384,7 @@ class LevelManager {
 
             sprite.src = basicSprite;
             enemy.position.x += this.spriteOffset.toughEnemy.x - this.spriteOffset.basicEnemy.x;
+            enemy.position.y = enemy.jump.ground;
             enemy.position.y += this.spriteOffset.toughEnemy.y - this.spriteOffset.basicEnemy.y;
             sprite.style.left = enemy.position.x.toString() + "px";
             sprite.style.top = enemy.position.y.toString() + "px";
@@ -307,16 +399,17 @@ class LevelManager {
 
             document.getElementById(tower.id).remove();
             towers[laneIndex][towerIndex] = undefined;
+            audioManager.death.tower.play();
         }
     }
 
     debug() { //temporary function to debug
-        window.addEventListener("keydown", (event) => { // kill enemies with a press of the key "S"
+        window.addEventListener("keydown", (event) => { // kill enemy with a press of the key "S"
             if (event.code == "KeyS") {
                 let enemies = this.entities.enemies;
                 for (let i = 0; i < enemies.length; i++) {
                     if (enemies[i].length > 0) {
-                        let enemy = this.entities.enemies[i].pop();
+                        let enemy = this.entities.enemies[i].shift();
                         document.getElementById(enemy.id).remove();
                         break;
                     }
@@ -324,8 +417,7 @@ class LevelManager {
             }
         }, { signal: this.buttonControl.signal });
 
-
-        window.addEventListener("keydown", (event) => { //damage enemies with a press of the key "D"
+        window.addEventListener("keydown", (event) => { //damage enemy with a press of the key "D"
             if (event.code == "KeyD") {
                 let enemies = this.entities.enemies;
                 for (let i = 0; i < enemies.length; i++) {
@@ -337,7 +429,7 @@ class LevelManager {
             }
         }, { signal: this.buttonControl.signal });
 
-        window.addEventListener("keydown", (event) => {
+        window.addEventListener("keydown", (event) => { //win by pressing "W" and lose by pressing "L"
             if(event.code == "KeyW") {
                 this.status = "win";
             }
@@ -346,10 +438,32 @@ class LevelManager {
             }
         }, {signal: this.buttonControl.signal});
 
-        window.addEventListener("keydown", (event) => {
+        window.addEventListener("keydown", (event) => { //add currency by pressing "A"
             if(event.code == "KeyA") {
                 this.currency++;
                 document.getElementById("currencyCounter").innerHTML = this.currency;
+            }
+        }, { signal: this.buttonControl.signal});
+
+        window.addEventListener("keydown", (event) => { //freeze all enemies by pressing "F"
+            if (event.code == "KeyF") {
+                let enemies = this.entities.enemies;
+                for(let lane = 0; lane < this.levelInfo.lanes; lane++) {
+                    enemies[lane].forEach(enemy => enemy.freeze = true);
+                }
+            }
+        }, { signal: this.buttonControl.signal });
+        
+        window.addEventListener("keydown", (event) => { //shoots projectile on a first lane by pressin "1"
+            if(event.code == "Digit1") {
+                let position = {
+                    x: this.firstCell.x - this.spriteOffset.basicProjectile.x,
+                    y: this.firstCell.y - this.spriteOffset.basicProjectile.y
+                }
+                let id = `p_${"FreezingProjectile"}_${Math.floor(Math.random()*100)}_${Math.floor(Math.random()*100)}`;
+                let projectile = new Projectile(id, position, "FreezingProjectile", true);
+                this.entities.projectiles[0].push(projectile);
+                document.getElementById("gameScreen").innerHTML += this.entities.projectiles[0][this.entities.projectiles[0].length-1].createProjectile();
             }
         }, { signal: this.buttonControl.signal});
     }
@@ -366,40 +480,44 @@ class Tower {
     attack = {
         reload: tps / 2,
         speed: tps / 2 }
-    buffed = false;
 
-    lane = this.id.split("_")[2];
-    cell = this.id.split("_")[3];
+    lane;
+    cell;
+    projectileCounter = 0;
 
     constructor(id, position, type) {
         this.id = id;
         this.position.x = position.x;
         this.position.y = position.y;
         this.type = type;
+        this.lane = this.id.split("_")[2];
+        this.cell = this.id.split("_")[3];
 
         switch (this.type) {
             case "Basic"://обычный
-                this.stats(6, 4, 0);
+                this.stats(6, 4, 0, 2);
                 break;
             case "Buff"://баффающий
-                this.stats(2, 10, 5);
+                this.stats(2, 10, 1, 3);
                 break;
             case "Generator": //генератор
-                this.stats(6, 2, 0);
+                this.stats(6, 2, 0, 2);
                 break;
             case "Freezing": //замедляющий
-                this.stats(6, 7, 0);
+                this.stats(6, 7, 0, 2);
                 break;
             case "Spike"://шипастый
-                this.stats(40, 5, 0);
+                this.stats(40, 5, 0, 2);
                 break;
         }
     }
 
-    stats(hp, cost, buff) {
+    stats(hp, cost, buff, reload) {
             this.hp = hp;
             this.cost = cost;
             this.buff = buff;
+            this.attack.reload = reload * tps;
+            this.attack.speed = reload * tps;
     }
 
     createTower(){
@@ -425,7 +543,6 @@ class Tower {
     }  
     
     action(object){ //actions of different towers
-        if (this.curBuff<=0) {this.buffed = false}
         if (this.attack.reload <= 0) {
             switch(this.type){
                 case "Basic": //creating projectile of basic cat
@@ -433,81 +550,51 @@ class Tower {
                         x: this.position.x,
                         y: this.position.y
                     }
-                    let idB = `p_${"BasicProjectile"}_${this.lane}_${this.cell}`;
+                    let idB = `p_${"BasicProjectile"}_${this.lane}_${this.cell}_${this.projectileCounter}`;
+                    this.projectileCounter++;
                     let projectileB = new Projectile(idB, positionB, "BasicProjectile");
-                    object.entities.projectiles[this.lane][this.cell].push(projectileB);
-                    if (this.buffed)
-                        this.attack.reload = this.attack.speed/2;
-                    else
-                        this.attack.reload = this.attack.speed;
+                    object.push(projectileB);
+                    document.getElementById("gameScreen").innerHTML += object[object.length-1].createProjectile();
+                    this.attack.reload = this.attack.speed;
                     //console.log(projectileB);
                     break;
                 case "Generator": //generating currency
                     object.currency ++
-                    if (this.buffed)
-                        this.attack.reload = this.attack.speed/2;
-                    else
-                        this.attack.reload = this.attack.speed;
+                    document.getElementById("currencyCounter").innerHTML = object.currency;
+                    this.attack.reload = this.attack.speed;
                     break;
                 case "Buff":
-                    this.curBuff = this.buff * tps;
-                    buffed = true;
+                    for (let i = 0; i < object.length; i++){
+                        object[i].curBuff = this.buff * tps;
+                    }
                     this.attack.reload = this.attack.speed;
                     break;
                 case "Spike":
-                    object.hp -= 20; //20 - amount of damage
-                    if (this.buffed)
-                        this.attack.reload = this.attack.speed/2;
-                    else
-                        this.attack.reload = this.attack.speed;
+                    for (let i = 0; i < object.length; i++)
+                        object[i].hp -= 20; //20 - amount of damage
+                    this.attack.reload = this.attack.speed;
                     break;
                 case "Freezing": //creating projectile of freezing cat
                     let positionF = {
                         x: this.position.x,
                         y: this.position.y
                     }
-                    let idF = `p_${"FreeezingProjectile"}_${this.lane}_${this.cell}`;
+                    let idF = `p_${"FreeezingProjectile"}_${this.lane}_${this.cell}_${this.projectileCounter}`;
                     let projectileF = new Projectile(idF, positionF, "FreeezingProjectile");
                     object.entities.projectiles[this.lane][this.cell].push(projectileF);
-                    if (this.buffed)
-                        this.attack.reload = this.attack.speed/2;
-                    else
-                        this.attack.reload = this.attack.speed;
+                    this.attack.reload = this.attack.speed;
                     break;
             }
         } else {
-            this.attack.reload--
+            if (this.curBuff > 0){
+                this.attack.reload -= 2;
+                this.curBuff--;
+            } else {this.attack.reload--}
+
         }
     }
 
-    /*towerAction(){
-        let enemy;
-        for(let lane = 0; lane < this.entities.enemies.length; lane++) {
-            for(let e = 0; e < this.entities.enemies[lane].length; e++) {
-                enemy = this.entities.enemies[lane][e]; 
-            }
-        }
-
-        for(let lane = 0; lane < this.entities.towers.length; lane++) {
-            for(let e = 0; e < this.entities.towers[lane].length; e++) {
-                let tower = this.entities.towers[lane][e];
-                if (tower) {
-                    switch(tower.type){
-                        case "Generator":
-                            tower.action(this)
-                            console.log(this.currency)
-                            break;
-                        case "Basic":
-                            if ((enemy.position.x - tower.position.x) < 800) {
-                                tower.action(this);
-                                let projectile = this.entities.projectiles[tower.id.split("_")[2]][tower.id.split("_")[3]]
-                                //console.log(projectile)
-                            } 
-                    }
-                }
-            }
-        }
-    }*/
+    /**/
 }
 
 class Projectile {
@@ -515,12 +602,15 @@ class Projectile {
     position = {x: undefined, y: undefined}
     type;
     damage;
-    constructor(id, position, type){
+    speed;
+    buffed;
+    constructor(id, position, type, buffed) {
         this.id = id;
         this.position.x = position.x;
         this.position.y = position.y;
         this.type = type;
-        console.log(`Projectile. type: ${this.type}`)
+        this.buffed = buffed;
+        this.speed = 3;
 
         switch(this.type){
             case "BasicProjectile":
@@ -533,12 +623,19 @@ class Projectile {
     }
 
     createProjectile(){
+        let src;
         switch(this.type){
             case "BasicProjectile":
-                src = "Assets/Cats/Basic/basicIdle.png";
+                if(this.buffed)
+                    src = "Assets/Cats/Basic/basicProjectileBuff.png";
+                else
+                    src = "Assets/Cats/Basic/basicProjectile.png"
                 break;
             case "FreezingProjectile":
-                src = "Assets/Cats/Basic/basicIdle.png";
+                if(this.buffed)
+                    src = "Assets/Cats/Freezing/freezingProjectileBuff.png";
+                else
+                    src = "Assets/Cats/Freezing/freezingProjectile.png"
                 break;
         }
 
@@ -546,11 +643,9 @@ class Projectile {
     }
 
     move(){
-        console.log("mooooviiing")
-        /*let sprite = document.getElementById(this.id);
+        let sprite = document.getElementById(this.id);
         this.position.x += this.speed * cellSize.x / tps;
         sprite.style.left = this.position.x.toString() + "px";
-        console.log(sprite.style.left)*/
     }
 
     action(enemy){
@@ -561,9 +656,16 @@ class Projectile {
 }
 
 class Enemy {
+    jump = {
+        gravity: cellSize.y * 9 / 8,
+        initialSpeed: cellSize.y * 3 / 4,
+        speed: cellSize.y * 3 / 4,
+        ground: undefined
+    }
     id;
     type;
     speed; //speed of an enemy in cells per second
+    rotationSpeed;
     hp;
     position = { x: undefined, y: undefined };
     attack = {
@@ -578,6 +680,8 @@ class Enemy {
         this.position.x = position.x;
         this.position.y = position.y;
         this.type = type;
+        this.jump.ground = this.position.y;
+        this.rotationSpeed = 360 * cellSize.x / (Math.PI * 108);
 
         switch (this.type) {
             case "Basic":
@@ -596,26 +700,38 @@ class Enemy {
         let src;
         switch (this.type) {
             case "Basic":
-                src = "Assets/Enemies/basic_enemy.png";
+                src = "Assets/Enemies/basic.png";
                 break;
             case "Tough":
-                src = "Assets/Enemies/tough_enemy.png";
+                src = "Assets/Enemies/tough.png";
                 break;
             case "Fast":
-                src = "Assets/Enemies/basic_enemy.png";
+                src = "Assets/Enemies/fast.png";
                 break;
         }
-        return `<img id="${this.id}" src="${src}" style="left: ${this.position.x}px; top: ${this.position.y}px;">`;
+        return `<img id="${this.id}" src="${src}" style="left: ${this.position.x}px; top: ${this.position.y}px;" draggable="false">`;
     }
 
     move() { //moves an enemy
         let sprite = document.getElementById(this.id);
-        this.position.x -= this.speed * cellSize.x / tps;
+        let freezing = this.freeze ? 0.5 : 1;
+
+        this.position.x -= this.speed * cellSize.x * freezing / tps;
         sprite.style.left = this.position.x.toString() + "px";
+
         if (!sprite.src.includes("tough")) {
-            let deg = Number(sprite.style.rotate.replace("deg", "")) - 212 * this.speed / tps;
+            let deg = Number(sprite.style.rotate.replace("deg", "")) - this.rotationSpeed * this.speed * freezing / tps;
             sprite.style.rotate = deg.toString() + "deg";
+        } else {
+            this.position.y -= this.jump.speed / tps;
+            this.jump.speed -= this.jump.gravity / tps;
+            if(this.position.y >= this.jump.ground) {
+                this.jump.speed = this.jump.initialSpeed;
+                this.position.y = this.jump.ground;
+            }
+            sprite.style.top = this.position.y.toString() + "px";
         }
+
         if (this.type == "Fast") {
             this.speed = 1.2 - (this.hp - 10) / 40;
         }
@@ -626,14 +742,21 @@ class Enemy {
         this.hp = hp;
     }
 
-    action(tower) { //returns damaged tower if ready to attack
+    action(tower) { //damages tower if ready to attack
         if(this.attack.reload <= 0) {
-            tower.hp -= this.attack.damage
+            audioManager.hit.tower.play();
+            tower.hp -= this.attack.damage;
             this.attack.reload = this.attack.speed;
-            return tower;
         } else {
             this.attack.reload--;
         }
+    }
+
+    stateChange() {
+        let sprite = document.getElementById(this.id);
+        if(this.freeze && !sprite.src.includes("Freeze")) {
+            sprite.src = sprite.src.replace(".png", "Freeze.png");
+        } 
     }
 }
 
@@ -646,22 +769,26 @@ class AudioManager {
         click: new Audio("Assets/Audio/testSound.ogg"),
         towerPlace: new Audio("Assets/Audio/testSound.ogg")
     };
-    tower = {
-        shoot: new Audio("Assets/Audio/testSound.ogg"),
-        generate: new Audio("Assets/Audio/testSound.ogg"),
-        buff: new Audio("Assets/Audio/testSound.ogg")
+    towerAction = {
+        shoot: new Audio("Assets/Audio/tower_attack.ogg"),
+        generate: new Audio("Assets/Audio/currency_generation.ogg"),
+        buff: new Audio("Assets/Audio/buff_sound.ogg")
     };
     hit = {
+        enemy: new Audio("Assets/Audio/enemy_was_attacked.ogg"),
+        tower: new Audio("Assets/Audio/tower_was_attacked.ogg")
+    };
+    death = {
         enemy: new Audio("Assets/Audio/testSound.ogg"),
-        tower: new Audio("Assets/Audio/testSound.ogg")
+        tower: new Audio("Assets/Audio/tower_defeat.ogg")
     };
     end = {
         win: new Audio("Assets/Audio/testSound.ogg"),
-        lose: new Audio("Assets/Audio/testSound.ogg")
+        lose: new Audio("Assets/Audio/gameover.ogg")
     };
     music = {
-        menu: new Audio(),
-        level: new Audio()
+        menu: new Audio("Assets/Audio/menu_sound.ogg"),
+        level: new Audio("Assets/Audio/game_sound.ogg")
     };
 
     constructor() {
@@ -687,12 +814,15 @@ class AudioManager {
         this.UI.click.volume = this.volume.sfx;
         this.UI.towerPlace.volume = this.volume.sfx;
 
-        this.tower.shoot.volume = this.volume.sfx;
-        this.tower.generate.volume = this.volume.sfx;
-        this.tower.buff.volume = this.volume.sfx;
+        this.towerAction.shoot.volume = this.volume.sfx;
+        this.towerAction.generate.volume = this.volume.sfx;
+        this.towerAction.buff.volume = this.volume.sfx;
 
         this.hit.enemy.volume = this.volume.sfx;
         this.hit.tower.volume = this.volume.sfx;
+
+        this.death.enemy.volume = this.volume.sfx;
+        this.death.tower.volume = this.volume.sfx;
 
         this.end.win.volume = this.volume.sfx;
         this.end.lose.volume = this.volume.sfx;

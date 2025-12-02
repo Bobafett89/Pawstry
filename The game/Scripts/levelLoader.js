@@ -5,36 +5,43 @@ class LevelLoader {
     constructor() {
         this.jsonInput = document.getElementById("jsonInput");
         jsonInput.addEventListener("change", () => this.fileLoad());
+        let images = document.getElementsByTagName("img");
+        Object.values(images).forEach(image => image.setAttribute("draggable", false));
 
         this.setTps();
         this.initTpsSetting();
         this.initScreenSetting();
         this.loadProgress();
         this.initMenuButtons();
+        this.setButtonSound();
+        this.startMusic();
     }
 
-    async fileLoad() { //function which checks if chosen file is correct, if yes copies text into "jsonText" and transitions to level choice
+    async fileLoad() { //checks if chosen file is correct, if yes copies text into "jsonText" and transitions to main menu
         let file = jsonInput.files[0];
-        if(file.name == "Levels.json") {
+        if (file.name == "Levels.json") {
             this.jsonText = await file.text();
             document.getElementById("jsonLoader").hidden = true;
             document.getElementById("mainMenu").hidden = false;
         }
     }
 
-    loadLevel(level) { //function which loads the level and switches to a game screen
+    loadLevel(level) { //loads the level and switches to a game screen
         let levels = JSON.parse(this.jsonText);
         let waves = Object.values(levels)[level];
 
         this.switchScreens("levelSelect", "titleScreen");
         this.switchScreens("mainMenu", "level")
         this.levelUnlocks(level);
+        audioManager.music.menu.pause();
+        audioManager.music.menu.load();
+        audioManager.music.level.play();
         new LevelManager(level, waves);
     }
-    
-    setTps() {
+
+    setTps() { //loads tps from localStorage
         let savedTps = localStorage.getItem("tps");
-        if(savedTps === null) {
+        if (savedTps === null) {
             savedTps = 30;
             localStorage.setItem("tps", savedTps);
         }
@@ -59,44 +66,46 @@ class LevelLoader {
         });
     }
 
-    initScreenSetting() {
+    initScreenSetting() { //manages screen setting
         let checkbox = document.getElementById("fullscreenSetting");
+        
         checkbox.addEventListener("click", () => {
-            if(checkbox.checked) {
+            if (checkbox.checked) {
                 document.documentElement.requestFullscreen();
             } else {
                 document.exitFullscreen();
             }
         });
         document.documentElement.addEventListener("fullscreenchange", () => {
-            if(document.fullscreenElement == null && checkbox.checked) {
+            if (document.fullscreenElement == null && checkbox.checked) {
                 checkbox.checked = false;
             }
         });
     }
 
-    loadProgress() {
+    loadProgress() { //load progress form localStorage
         let progress = localStorage.getItem("level");
-        if(progress === null) {
+
+        if (progress === null) {
             progress = 0;
             localStorage.setItem("level", progress);
         }
         availableLevels = Number(progress);
     }
 
-    resetProgress() {
+    resetProgress() { //resets progress
         availableLevels = 0;
         localStorage.setItem("level", availableLevels);
-        for(let i = 0; i < 10; i++) {
-            let progress = availableLevels >= i ? false : true;
+        for (let i = 0; i < 10; i++) {
+            let progress = availableLevels < i;
             document.getElementById(`levelLoad${i}`).hidden = progress;
         }
     }
 
-    initMenuButtons() {
-        for(let i = 0; i < 10; i++) {
+    initMenuButtons() { //adds functionality to buttons
+        for (let i = 0; i < 10; i++) {
             let button = document.getElementById(`levelLoad${i}`);
-            let progress = availableLevels >= i ? false : true;
+            let progress = availableLevels < i;
 
             button.addEventListener("click", () => this.loadLevel(i));
             button.hidden = progress;
@@ -111,28 +120,46 @@ class LevelLoader {
         document.getElementById("settingsProgressReset").addEventListener("click", () => this.resetProgress());
     }
 
-    switchScreens(oldScreen, newScreen) {
+    switchScreens(oldScreen, newScreen) { //switches screens (divs with certain theme, e.g. settings)
         document.getElementById(oldScreen).hidden = true;
         document.getElementById(newScreen).hidden = false;
     }
 
-    levelUnlocks(level) {
-        switch(level) {
+    levelUnlocks(level) { //sets elements visuals depending on a level
+        let fieldImg = document.getElementById("fieldImg");
+        let fieldDetails = document.getElementById("fieldDetails");
+
+        switch (level) {
             case 0:
-                document.getElementById("fieldImg").src = "Assets/FieldVariants/OneLane.png";
-                document.getElementById("fieldDetails").src = "Assets/UI/detailsTwoLevels.png";
+                fieldImg.src = "Assets/FieldVariants/OneLane.png";
+                fieldDetails.src = "Assets/UI/detailsTwoLevels.png";
                 break;
             case 1:
-                document.getElementById("fieldImg").src = "Assets/FieldVariants/ThreeLanes.png";
-                document.getElementById("fieldDetails").src = "Assets/UI/detailsTwoLevels.png";
+                fieldImg.src = "Assets/FieldVariants/ThreeLanes.png";
+                fieldDetails.src = "Assets/UI/detailsTwoLevels.png";
                 break;
             default:
-                document.getElementById("fieldImg").src = "Assets/FieldVariants/FiveLanes.png";
-                document.getElementById("fieldDetails").src = "Assets/UI/details.png";
+                fieldImg.src = "Assets/FieldVariants/FiveLanes.png";
+                fieldDetails.src = "Assets/UI/details.png";
                 break;
         }
         document.getElementById("BuffCatUI").hidden = level < 2;
         document.getElementById("SpikeCatUI").hidden = level < 4;
         document.getElementById("FreezingCatUI").hidden = level < 7;
+    }
+
+    startMusic() { //starts music
+        audioManager.music.menu.loop = true;
+        audioManager.music.level.loop = true;
+        window.addEventListener("click", () => audioManager.music.menu.play(), { once: true });
+    }
+
+    setButtonSound() { //adds click sound to buttons
+        let buttons = document.getElementsByTagName("button");
+        let selectors = document.getElementsByClassName("Selector");
+
+        Object.values(buttons).forEach(button => button.addEventListener("click", () => audioManager.UI.click.play()));
+        Object.values(selectors).forEach(selector => selector.addEventListener("click", () => audioManager.UI.click.play()));
+        document.getElementById("exitUI").addEventListener("click", () => audioManager.UI.click.play());
     }
 }
