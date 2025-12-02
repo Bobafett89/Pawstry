@@ -48,10 +48,11 @@ class LevelManager {
 
     update() { //main function where most of the logic takes place and which is called each tick
         if (this.status == "running") {
-            this.enemyAction();
-            this.entitiesHpManager();
             this.waveManager();
+            this.enemyAction();
             this.towerAction();
+            this.projectileAction();
+            this.entitiesHpManager();
 
             setTimeout(() => this.update(), 1000 / tps);
         } else if (this.status == "win" || this.status == "lose") {
@@ -201,9 +202,36 @@ class LevelManager {
         }
     } 
 
+    projectileAction() {
+        for(let lane = 0; lane < this.levelInfo.lanes; lane++) {
+            for(let p = 0; p < this.entities.projectiles[lane].length; p++) {
+                let projectile = this.entities.projectiles[lane][p];
+                projectile.move();
+                if(projectile.position.x <= 1920 - this.spriteOffset.basicProjectile.x){
+                    for(let e = 0; e < this.entities.enemies[lane].length; e++) {
+                        let enemy = this.entities.enemies[lane][e];
+                        let dist = projectile.position.x + this.spriteOffset.basicProjectile.x - enemy.position.x;
+                        if(dist >= 0 && dist <= this.spriteOffset.toughEnemy.x * 2) {
+                            projectile.action(enemy);
+                            this.entities.projectiles[lane].splice(p, 1);
+                            document.getElementById(projectile.id).remove();
+                            p--;
+                            break;
+                        }
+                    }
+                } else {
+                    this.entities.projectiles[lane].splice(p, 1);
+                    document.getElementById(projectile.id).remove();
+                    p--;
+                }
+            }
+        }
+    }
+
     exit() { //removes entities, eventListeners and switches screens
         this.entities.enemies.forEach(lane => lane.forEach(enemy => document.getElementById(enemy.id).remove()));
         this.entities.towers.forEach(lane => lane.forEach(tower => tower != undefined ? document.getElementById(tower.id).remove() : {}));
+        this.entities.projectiles.forEach(lane => lane.forEach(projectile => document.getElementById(projectile.id).remove()));
         this.buttonControl.abort();
         audioManager.music.menu.play();
         audioManager.music.level.pause();
@@ -389,7 +417,6 @@ class LevelManager {
             }
         }, { signal: this.buttonControl.signal });
 
-
         window.addEventListener("keydown", (event) => { //damage enemy with a press of the key "D"
             if (event.code == "KeyD") {
                 let enemies = this.entities.enemies;
@@ -426,6 +453,19 @@ class LevelManager {
                 }
             }
         }, { signal: this.buttonControl.signal });
+        
+        window.addEventListener("keydown", (event) => { //shoots projectile on a first lane by pressin "1"
+            if(event.code == "Digit1") {
+                let position = {
+                    x: this.firstCell.x - this.spriteOffset.basicProjectile.x,
+                    y: this.firstCell.y - this.spriteOffset.basicProjectile.y
+                }
+                let id = `p_${"FreezingProjectile"}_${Math.floor(Math.random()*100)}_${Math.floor(Math.random()*100)}`;
+                let projectile = new Projectile(id, position, "FreezingProjectile", true);
+                this.entities.projectiles[0].push(projectile);
+                document.getElementById("gameScreen").innerHTML += this.entities.projectiles[0][this.entities.projectiles[0].length-1].createProjectile();
+            }
+        }, { signal: this.buttonControl.signal});
     }
 }
 
@@ -514,6 +554,7 @@ class Tower {
                     this.projectileCounter++;
                     let projectileB = new Projectile(idB, positionB, "BasicProjectile");
                     object.push(projectileB);
+                    document.getElementById("gameScreen").innerHTML += object[object.length-1].createProjectile();
                     this.attack.reload = this.attack.speed;
                     //console.log(projectileB);
                     break;
@@ -561,12 +602,15 @@ class Projectile {
     position = {x: undefined, y: undefined}
     type;
     damage;
-    constructor(id, position, type){
+    speed;
+    buffed;
+    constructor(id, position, type, buffed) {
         this.id = id;
         this.position.x = position.x;
         this.position.y = position.y;
         this.type = type;
-        console.log(`Projectile. type: ${this.type}`)
+        this.buffed = buffed;
+        this.speed = 3;
 
         switch(this.type){
             case "BasicProjectile":
@@ -582,10 +626,16 @@ class Projectile {
         let src;
         switch(this.type){
             case "BasicProjectile":
-                src = "Assets/Cats/Basic/basicIdle.png";
+                if(this.buffed)
+                    src = "Assets/Cats/Basic/basicProjectileBuff.png";
+                else
+                    src = "Assets/Cats/Basic/basicProjectile.png"
                 break;
             case "FreezingProjectile":
-                src = "Assets/Cats/Basic/basicIdle.png";
+                if(this.buffed)
+                    src = "Assets/Cats/Freezing/freezingProjectileBuff.png";
+                else
+                    src = "Assets/Cats/Freezing/freezingProjectile.png"
                 break;
         }
 
@@ -593,11 +643,9 @@ class Projectile {
     }
 
     move(){
-        console.log("mooooviiing")
-        /*let sprite = document.getElementById(this.id);
+        let sprite = document.getElementById(this.id);
         this.position.x += this.speed * cellSize.x / tps;
         sprite.style.left = this.position.x.toString() + "px";
-        console.log(sprite.style.left)*/
     }
 
     action(enemy){
