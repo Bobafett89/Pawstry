@@ -128,6 +128,18 @@
 
         <script>
             const cellSize = {x: 196, y: 133}; //object which stores size of the cells in pixels
+            const spriteOffset = {
+                generatorTower: { x: 120, y: 104},
+                basicTower: { x: 120, y: 96},
+                buffTower: { x: 104, y: 96},
+                spikeTower: { x: 136, y: 112},
+                freezingTower: { x: 112, y: 80},
+                basicEnemy: { x: 54, y: 55 },
+                toughEnemy: { x: 96, y: 70 },
+                fastEnemy: {x: 54, y: 55},
+                basicProjectile: {x: 54, y: 33},
+                freezingProjectile: {x: 54, y: 33}
+            }; //halfed dimensions of sprites which are used to place entities correctly
             var tps; //ticks per seconds - similiar to frames per second
             var availableLevels;
             var audioManager = new AudioManager();

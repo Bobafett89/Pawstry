@@ -16,18 +16,6 @@ class LevelManager {
     }; //object of arrays inside which arrays represent lanes containing entities
     status; //variable which indicates the state of a game
     firstCell = { x: 176, y: 413 }; //position of the center of the first (top-left) cell
-    spriteOffset = {
-        generatorTower: { x: 120, y: 104},
-        basicTower: { x: 120, y: 96},
-        buffTower: { x: 104, y: 96},
-        spikeTower: { x: 136, y: 112},
-        freezingTower: { x: 112, y: 80},
-        basicEnemy: { x: 54, y: 55 },
-        toughEnemy: { x: 96, y: 70 },
-        fastEnemy: {x: 54, y: 55},
-        basicProjectile: {x: 54, y: 33},
-        freezingProjectile: {x: 54, y: 33}
-    }; //halfed dimensions of sprites which are used to place entities correctly
     buttonControl = new AbortController(); //object which is used to delete all created eventListeners inside LevelManager
     chosenTower = "Generator";
     currency = 2;
@@ -170,19 +158,19 @@ class LevelManager {
             let offset;
             switch(type) {
                 case "Generator":
-                    offset = this.spriteOffset.generatorTower;
+                    offset = spriteOffset.generatorTower;
                     break;
                 case "Basic":
-                    offset = this.spriteOffset.basicTower;
+                    offset = spriteOffset.basicTower;
                     break;
                 case "Buff":
-                    offset = this.spriteOffset.buffTower;
+                    offset = spriteOffset.buffTower;
                     break;
                 case "Spike":
-                    offset = this.spriteOffset.spikeTower;
+                    offset = spriteOffset.spikeTower;
                     break;
                 case "Freezing":
-                    offset = this.spriteOffset.freezingTower;
+                    offset = spriteOffset.freezingTower;
                     break;
             }
             let position = {
@@ -207,11 +195,11 @@ class LevelManager {
             for(let p = 0; p < this.entities.projectiles[lane].length; p++) {
                 let projectile = this.entities.projectiles[lane][p];
                 projectile.move();
-                if(projectile.position.x <= 1920 - this.spriteOffset.basicProjectile.x){
+                if(projectile.position.x <= 1920 - spriteOffset.basicProjectile.x){
                     for(let e = 0; e < this.entities.enemies[lane].length; e++) {
                         let enemy = this.entities.enemies[lane][e];
-                        let dist = projectile.position.x + this.spriteOffset.basicProjectile.x - enemy.position.x;
-                        if(dist >= 0 && dist <= this.spriteOffset.toughEnemy.x * 2) {
+                        let dist = projectile.position.x + spriteOffset.basicProjectile.x - enemy.position.x;
+                        if(dist >= 0 && dist <= spriteOffset.toughEnemy.x * 2) {
                             projectile.action(enemy);
                             this.entities.projectiles[lane].splice(p, 1);
                             document.getElementById(projectile.id).remove();
@@ -245,13 +233,13 @@ class LevelManager {
         let offset;
         switch (type) {
             case "Basic":
-                offset = this.spriteOffset.basicEnemy.y;
+                offset = spriteOffset.basicEnemy.y;
                 break;
             case "Tough":
-                offset = this.spriteOffset.toughEnemy.y;
+                offset = spriteOffset.toughEnemy.y;
                 break;
             case "Fast":
-                offset = this.spriteOffset.fastEnemy.y;
+                offset = spriteOffset.fastEnemy.y;
                 break;
         }
         let position = {
@@ -308,9 +296,7 @@ class LevelManager {
                             tower.animateTower();
                             break;
                         case "Basic":
-                            if (this.entities.enemies[lane].length > 0) {
-                                tower.action(this.entities.projectiles[lane]);
-                            }
+                            tower.action(this.entities);
                             tower.animateTower();
                             break;
                         case "Buff":
@@ -326,7 +312,7 @@ class LevelManager {
                                     }
                                 }
                             }
-                            if (buffedTowers.length > 0) {tower.action(buffedTowers);}
+                            tower.action(buffedTowers);
                             tower.animateTower();
                             break;
                         case "Spike":
@@ -336,14 +322,11 @@ class LevelManager {
                                 let dist =  this.entities.enemies[lane][i].position.x - startOfCell;
                                 if (dist >=0 && dist <= 0.75*cellSize.x) {attackedEnemies.push(this.entities.enemies[lane][i])}
                             }
-                        
-                            if (attackedEnemies.length > 0) {tower.action(attackedEnemies);}
+                            tower.action(attackedEnemies);
                             tower.animateTower();  
                             break;
                         case "Freezing":
-                            if (this.entities.enemies[lane].length > 0) {
-                                tower.action(this.entities.projectiles[lane]);
-                            }
+                            tower.action(this.entities);
                             tower.animateTower();
                             break;
                     }
@@ -394,9 +377,9 @@ class LevelManager {
             let sprite = document.getElementById(enemy.id);
 
             sprite.src = basicSprite;
-            enemy.position.x += this.spriteOffset.toughEnemy.x - this.spriteOffset.basicEnemy.x;
+            enemy.position.x += spriteOffset.toughEnemy.x - spriteOffset.basicEnemy.x;
             enemy.position.y = enemy.jump.ground;
-            enemy.position.y += this.spriteOffset.toughEnemy.y - this.spriteOffset.basicEnemy.y;
+            enemy.position.y += spriteOffset.toughEnemy.y - spriteOffset.basicEnemy.y;
             sprite.style.left = enemy.position.x.toString() + "px";
             sprite.style.top = enemy.position.y.toString() + "px";
         }
@@ -468,8 +451,8 @@ class LevelManager {
         window.addEventListener("keydown", (event) => { //shoots projectile on a first lane by pressin "1"
             if(event.code == "Digit1") {
                 let position = {
-                    x: this.firstCell.x - this.spriteOffset.basicProjectile.x,
-                    y: this.firstCell.y - this.spriteOffset.basicProjectile.y
+                    x: this.firstCell.x - spriteOffset.basicProjectile.x,
+                    y: this.firstCell.y - spriteOffset.basicProjectile.y
                 }
                 let id = `p_${"FreezingProjectile"}_${Math.floor(Math.random()*100)}_${Math.floor(Math.random()*100)}`;
                 let projectile = new Projectile(id, position, "FreezingProjectile", true);
@@ -486,12 +469,11 @@ class Tower {
     type;
     hp;
     cost;
-    buff;
+    buff = 5;
     curBuff = 0;
-    buffed = false;
     attack = {
-        reload: tps / 2,
-        speed: tps / 2 };
+        reload: undefined,
+        speed: undefined};
     picture = {
         action: undefined,
         reload: undefined
@@ -501,7 +483,6 @@ class Tower {
     cell;
     projectileCounter = 0;
     shoot = false;
-    towerImg;
 
 
     constructor(id, position, type) {
@@ -514,31 +495,30 @@ class Tower {
 
         switch (this.type) {
             case "Basic"://обычный
-                this.stats(6, 4, 1, 2, 0.55);
+                this.stats(6, 4, 2, 0.55);
                 break;
             case "Buff"://баффающий
-                this.stats(2, 10, 1, 3, 1.2);
+                this.stats(2, 10, 5, 1.2); //dont forget to change reload to 20
                 break;
             case "Generator": //генератор
-                this.stats(6, 2, 1, 3, 0.6);
+                this.stats(6, 2, 5, 0.6); //dont forget to change reload to 12
                 break;
             case "Freezing": //замедляющий
-                this.stats(6, 7, 1, 2, 0.6);
+                this.stats(6, 7, 2, 0.6);
                 break;
             case "Spike"://шипастый
-                this.stats(40, 5, 1, 2, 0.75);
+                this.stats(40, 5, 4, 0.75);
                 break;
         }
     }
 
-    stats(hp, cost, buff, reload, action) {
-            this.hp = hp;
-            this.cost = cost;
-            this.buff = buff;
-            this.attack.reload = reload * tps;
-            this.attack.speed = reload * tps;
-            this.picture.action = action * tps;
-            this.picture.reload = action * tps;
+    stats(hp, cost, reload, action) {
+        this.hp = hp;
+        this.cost = cost;
+        this.attack.reload = reload * tps;
+        this.attack.speed = this.attack.reload;
+        this.picture.action = action * tps;
+        this.picture.reload = this.picture.action;
     }
 
     createTower(){
@@ -568,74 +548,98 @@ class Tower {
         if (this.attack.reload <= 0) {
             switch(this.type){
                 case "Basic": //creating projectile of basic cat
-                    let positionB = {
-                        x: this.position.x,
-                        y: this.position.y
+                    if(object.enemies[this.lane].length > 0) {
+                        this.shootProjectile(object.projectiles[this.lane]);
+                        this.attack.reload = this.attack.speed;
                     }
-                    let idB = `p_${"BasicProjectile"}_${this.lane}_${this.cell}_${this.projectileCounter}`;
-                    this.projectileCounter++;
-                    let projectileB = new Projectile(idB, positionB, "BasicProjectile");
-                    object.push(projectileB);
-                    document.getElementById("gameScreen").innerHTML += object[object.length-1].createProjectile();
-                    this.attack.reload = this.attack.speed;
-                    audioManager.towerAction.shoot.play();
                     break;
                 case "Generator": //generating currency
-                    object.currency ++
+                    object.currency++;
                     document.getElementById("currencyCounter").innerHTML = object.currency;
                     this.attack.reload = this.attack.speed;
                     audioManager.towerAction.generate.play();
                     break;
                 case "Buff":
-                    for (let i = 0; i < object.length; i++){
-                        object[i].curBuff = this.buff * tps;
-                        object[i].buffed = true;
+                    if(object.length > 0) {
+                        for (let i = 0; i < object.length; i++){
+                            object[i].curBuff = this.buff * tps;
+                        }
+                        this.attack.reload = this.attack.speed;
+                        audioManager.towerAction.buff.play();
                     }
-                    this.attack.reload = this.attack.speed;
-                    audioManager.towerAction.buff.play();
                     break;
                 case "Spike":
-                    for (let i = 0; i < object.length; i++)
-                        object[i].hp -= 20; //20 - amount of damage
-                    this.attack.reload = this.attack.speed;
-                    audioManager.towerAction.shoot.play();
+                    if(object.length > 0) {
+                        for (let i = 0; i < object.length; i++)
+                            object[i].hp -= 20; //20 - amount of damage
+                        this.attack.reload = this.attack.speed;
+                        audioManager.towerAction.shoot.play();
+                    }
                     break;
                 case "Freezing": //creating projectile of freezing cat
-                    let positionF = {
-                        x: this.position.x,
-                        y: this.position.y
+                    if(object.enemies[this.lane].length > 0) {
+                        this.shootProjectile(object.projectiles[this.lane]);
+                        this.attack.reload = this.attack.speed;
                     }
-                    let idF = `p_${"FreeezingProjectile"}_${this.lane}_${this.cell}_${this.projectileCounter}`;
-                    this.projectileCounter++;
-                    let projectileF = new Projectile(idF, positionF, "FreezingProjectile");
-                    object.push(projectileF);
-                    document.getElementById("gameScreen").innerHTML += object[object.length-1].createProjectile();
-                    this.attack.reload = this.attack.speed;
-                    audioManager.towerAction.shoot.play();
                     break;
             }
         } else {
-            if (this.curBuff > 0){
-                this.attack.reload -= 2;
-                this.curBuff--;
-            } else {
-                this.attack.reload--;
-                this.buffed = false;
-            }
-
+            this.attack.reload -= this.curBuff > 0 ? 2 : 1;
+        }
+        if (this.curBuff > 0){
+            this.curBuff--;
         }
     }
 
+    shootProjectile(object) {
+        let type;
+        switch(this.type) {
+            case "Basic":
+                type = "BasicProjectile";
+                break;
+            case "Freezing":
+                type = "FreezingProjectile";
+                break;
+        } 
+
+        let projectile = this.createProjectile(type);
+        object.push(projectile);
+        document.getElementById("gameScreen").innerHTML += object[object.length-1].createProjectile();
+        audioManager.towerAction.shoot.play();
+    }
+
+    createProjectile(type) {
+        let towerOffset, projectileOffset;
+        switch(this.type) {
+            case "Basic":
+                towerOffset = spriteOffset.basicTower;
+                projectileOffset = spriteOffset.basicProjectile;
+                break;
+            case "Freezing":
+                towerOffset = spriteOffset.freezingTower;
+                projectileOffset = spriteOffset.freezingProjectile;
+                break;
+        }
+        let position = {
+            x: this.position.x + towerOffset.x - projectileOffset.x,
+            y: this.position.y + towerOffset.y - projectileOffset.y
+        }
+        let id = `p_${type}_${this.lane}_${this.cell}_${this.projectileCounter}`;
+        this.projectileCounter++;
+        let projectile = new Projectile(id, position, type, this.curBuff > 0);
+        return projectile;
+    }
+
     animateTower(){
-        this.towerImg = document.getElementById(this.id);
+        let towerImg = document.getElementById(this.id);
         
-        if (this.buffed){ //animation if tower is baffed
-            if (this.attack.reload == Math.round(this.picture.action/4) && this.buffed){ //animation of attack
-                this.towerImg.src = `Assets/Cats/${this.type}/${this.type.toLowerCase()}ActionBuff.png`;
+        if (this.curBuff > 0){ //animation if tower is baffed
+            if (this.attack.reload == Math.round(this.picture.action/4)){ //animation of attack
+                towerImg.src = `Assets/Cats/${this.type}/${this.type.toLowerCase()}ActionBuff.png`;
                 this.shoot = true;
             }
             else if (Math.round(this.picture.reload) == 0 || Math.round(this.picture.reload) == -1){
-                this.towerImg.src = `Assets/Cats/${this.type}/${this.type.toLowerCase()}IdleBuff.png`;
+                towerImg.src = `Assets/Cats/${this.type}/${this.type.toLowerCase()}IdleBuff.png`;
                 this.picture.reload = this.picture.action;
                 this.shoot = false;
             }
@@ -644,11 +648,11 @@ class Tower {
             }
         } else { // ani,ation if tower is not buffed
             if (this.attack.reload == Math.round(this.picture.action/2)) { //animation of attack
-                this.towerImg.src = `Assets/Cats/${this.type}/${this.type.toLowerCase()}Action.png`;
+                towerImg.src = `Assets/Cats/${this.type}/${this.type.toLowerCase()}Action.png`;
                 this.shoot = true;
             }
             else if (Math.round(this.picture.reload) == 0){
-                this.towerImg.src = `Assets/Cats/${this.type}/${this.type.toLowerCase()}Idle.png`;
+                towerImg.src = `Assets/Cats/${this.type}/${this.type.toLowerCase()}Idle.png`;
                 this.picture.reload = this.picture.action;
                 this.shoot = false;
             }
