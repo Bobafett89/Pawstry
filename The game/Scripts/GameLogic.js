@@ -829,8 +829,8 @@ class AudioManager {
         sfx: undefined
     };
     UI = {
-        click: new Audio("Assets/Audio/testSound.ogg"),
-        towerPlace: new Audio("Assets/Audio/testSound.ogg")
+        click: new Audio("Assets/Audio/botton_sound.ogg"),
+        towerPlace: new Audio("Assets/Audio/tower_was_placed.ogg")
     };
     towerAction = {
         shoot: new Audio("Assets/Audio/tower_attack.ogg"),
@@ -842,11 +842,11 @@ class AudioManager {
         tower: new Audio("Assets/Audio/tower_was_attacked.ogg")
     };
     death = {
-        enemy: new Audio("Assets/Audio/testSound.ogg"),
+        enemy: new Audio("Assets/Audio/enemy_defeat.ogg"),
         tower: new Audio("Assets/Audio/tower_defeat.ogg")
     };
     end = {
-        win: new Audio("Assets/Audio/testSound.ogg"),
+        win: new Audio("Assets/Audio/victory.ogg"),
         lose: new Audio("Assets/Audio/gameover.ogg")
     };
     music = {
