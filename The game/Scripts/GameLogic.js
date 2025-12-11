@@ -293,11 +293,9 @@ class LevelManager {
                     switch(tower.type){
                         case "Generator":
                             tower.action(this);
-                            tower.animateTower();
                             break;
                         case "Basic":
                             tower.action(this.entities);
-                            tower.animateTower();
                             break;
                         case "Buff":
                             let buffedTowers = [];
@@ -313,7 +311,6 @@ class LevelManager {
                                 }
                             }
                             tower.action(buffedTowers);
-                            tower.animateTower();
                             break;
                         case "Spike":
                             let attackedEnemies = [];
@@ -323,11 +320,9 @@ class LevelManager {
                                 if (dist >=0 && dist <= 0.75*cellSize.x) {attackedEnemies.push(this.entities.enemies[lane][i])}
                             }
                             tower.action(attackedEnemies);
-                            tower.animateTower();  
                             break;
                         case "Freezing":
                             tower.action(this.entities);
-                            tower.animateTower();
                             break;
                     }
                 }
@@ -474,18 +469,31 @@ class Tower {
     attack = {
         reload: undefined,
         speed: undefined};
-    picture = {
-        action: undefined,
-        reload: undefined
-    }
     lane;
     cell;
     projectileCounter = 0;
-    shoot = false;
     sounds = {
         action: undefined,
         hit: new Audio("Assets/Audio/tower_was_attacked.ogg"),
         death: new Audio("Assets/Audio/tower_defeat.ogg")
+    };
+    animation = {
+        actionFlag: false,
+        state: "Idle",
+        frame: {
+            tick: 0,
+            played: 0
+        },
+        info: {
+            action: {
+                frames: undefined,
+                frameTicks: undefined
+            },
+            idle: {
+                frames: undefined,
+                frameTicks: undefined
+            }
+        }
     };
 
 
@@ -499,23 +507,23 @@ class Tower {
 
         switch (this.type) {
             case "Basic"://обычный
-                this.stats(6, 4, 2, 0.55);
+                this.stats(6, 4, 2, 4, 0.2, 2, 0.75);
                 this.sounds.action = new Audio("Assets/Audio/tower_attack.ogg");
                 break;
             case "Buff"://баффающий
-                this.stats(2, 10, 5, 1.2); //dont forget to change reload to 20
+                this.stats(2, 10, 5, 2, 0.75, 2, 0.75); //dont forget to change reload to 20
                 this.sounds.action = new Audio("Assets/Audio/buff_sound.ogg");
                 break;
             case "Generator": //генератор
-                this.stats(6, 2, 5, 0.6); //dont forget to change reload to 12
+                this.stats(6, 2, 5, 3, 0.4, 2, 0.75); //dont forget to change reload to 12
                 this.sounds.action = new Audio("Assets/Audio/currency_generation.ogg");
                 break;
             case "Freezing": //замедляющий
-                this.stats(6, 7, 2, 0.6);
+                this.stats(6, 7, 2, 3, 0.3, 2, 1);
                 this.sounds.action = new Audio("Assets/Audio/tower_attack.ogg");
                 break;
             case "Spike"://шипастый
-                this.stats(40, 5, 4, 0.75);
+                this.stats(40, 5, 4, 4, 0.2, 2, 0.75);
                 this.sounds.action = new Audio("Assets/Audio/tower_attack.ogg");
                 break;
         }
@@ -524,74 +532,79 @@ class Tower {
         this.sounds.death.volume = audioManager.volume.sfx;
     }
 
-    stats(hp, cost, reload, action) {
+    stats(hp, cost, reload, actFrames, actFramesTime, idleFrames, idleFramesTime) {
         this.hp = hp;
         this.cost = cost;
         this.attack.reload = reload * tps;
         this.attack.speed = this.attack.reload;
-        this.picture.action = action * tps;
-        this.picture.reload = this.picture.action;
+        this.animation.info.action.frames = actFrames;
+        this.animation.info.action.frameTicks = Math.ceil(actFramesTime * tps);
+        this.animation.info.idle.frames = idleFrames;
+        this.animation.info.idle.frameTicks = Math.ceil(idleFramesTime * tps);
     }
 
     createTower(){
-        let src;
-        switch(this.type){
-            case "Basic":
-                src = "Assets/Cats/Basic/basicIdle.png";
-                break;
-            case "Buff":
-                src = "Assets/Cats/Buff/buffIdle.png";
-                break;
-            case "Generator":
-                src = "Assets/Cats/Generator/generatorIdle.png";
-                break;
-            case "Freezing":
-                src = "Assets/Cats/Freezing/freezingIdle.png";
-                break;
-            case "Spike":
-                src = "Assets/Cats/Spike/spikeIdle.png";
-                break;
-        }
+        let src = `Assets/Cats/${this.type}/Normal/Idle/1.png`;
         return `<img id="${this.id}" src="${src}" style="left: ${this.position.x}px; top: ${this.position.y}px;">`;
     }  
     
     action(object){ //actions of different towers
-        //this.animateTower();
+        this.animateTower();
         if (this.attack.reload <= 0) {
             switch(this.type){
                 case "Basic": //creating projectile of basic cat
                     if(object.enemies[this.lane].length > 0) {
-                        this.shootProjectile(object.projectiles[this.lane]);
-                        this.attack.reload = this.attack.speed;
+                        if(this.animation.actionFlag) {
+                            this.shootProjectile(object.projectiles[this.lane]);
+                            this.attack.reload = this.attack.speed;
+                        } else if (this.animation.state == "Idle") {
+                            this.changeState();
+                        }
                     }
                     break;
                 case "Generator": //generating currency
-                    object.currency++;
-                    document.getElementById("currencyCounter").innerHTML = object.currency;
-                    this.attack.reload = this.attack.speed;
-                    this.sounds.action.play();
+                    if(this.animation.actionFlag) {
+                        object.currency++;
+                        document.getElementById("currencyCounter").innerHTML = object.currency;
+                        this.attack.reload = this.attack.speed;
+                        this.sounds.action.play();
+                    } else if (this.animation.state == "Idle") {
+                        this.changeState();
+                    }
                     break;
                 case "Buff":
                     if(object.length > 0) {
-                        for (let i = 0; i < object.length; i++){
-                            object[i].curBuff = this.buff * tps;
+                        if(this.animation.actionFlag) {
+                            for (let i = 0; i < object.length; i++){
+                                object[i].curBuff = this.buff * tps;
+                            }
+                            this.attack.reload = this.attack.speed;
+                            this.sounds.action.play();
+                        } else if (this.animation.state == "Idle") {
+                            this.changeState();
                         }
-                        this.attack.reload = this.attack.speed;
-                        this.sounds.action.play();
                     }
                     break;
                 case "Spike":
                     if(object.length > 0) {
-                        for (let i = 0; i < object.length; i++)
-                            object[i].hp -= 20; //20 - amount of damage
-                        this.attack.reload = this.attack.speed;
-                        this.sounds.action.play();
+                        if(this.animation.actionFlag) {
+                            for (let i = 0; i < object.length; i++)
+                                object[i].hp -= 20; //20 - amount of damage
+                            this.attack.reload = this.attack.speed;
+                            this.sounds.action.play();
+                        } else if (this.animation.state == "Idle") {
+                            this.changeState();
+                        }
                     }
                     break;
                 case "Freezing": //creating projectile of freezing cat
                     if(object.enemies[this.lane].length > 0) {
-                        this.shootProjectile(object.projectiles[this.lane]);
-                        this.attack.reload = this.attack.speed;
+                        if(this.animation.actionFlag) {
+                            this.shootProjectile(object.projectiles[this.lane]);
+                            this.attack.reload = this.attack.speed;
+                        } else if (this.animation.state == "Idle") {
+                            this.changeState();
+                        }
                     }
                     break;
             }
@@ -642,37 +655,48 @@ class Tower {
         return projectile;
     }
 
-    animateTower(){
-        let towerImg = document.getElementById(this.id);
-        
-        if (this.curBuff > 0){ //animation if tower is baffed
-            if (this.attack.reload == Math.round(this.picture.action/4)){ //animation of attack
-                towerImg.src = `Assets/Cats/${this.type}/${this.type.toLowerCase()}ActionBuff.png`;
-                this.shoot = true;
+    animateTower() {
+        let sprite = document.getElementById(this.id);
+        let animInfo = this.animation.state == "Idle" ? this.animation.info.idle : this.animation.info.action
+        let playedFrames = Math.floor(this.animation.frame.tick / animInfo.frameTicks);
+
+        if(playedFrames >= animInfo.frames) {
+            if(this.animation.state == "Idle") {
+                this.resetAnimation(sprite);
+            } else {
+                this.animation.state = "Idle";
+                this.animation.actionFlag = false;
+                this.resetAnimation(sprite);
             }
-            else if (Math.round(this.picture.reload) == 0 || Math.round(this.picture.reload) == -1){
-                towerImg.src = `Assets/Cats/${this.type}/${this.type.toLowerCase()}IdleBuff.png`;
-                this.picture.reload = this.picture.action;
-                this.shoot = false;
-            }
-            else if (this.shoot == true){
-                this.picture.reload-=2
-            }
-        } else { // ani,ation if tower is not buffed
-            if (this.attack.reload == Math.round(this.picture.action/2)) { //animation of attack
-                towerImg.src = `Assets/Cats/${this.type}/${this.type.toLowerCase()}Action.png`;
-                this.shoot = true;
-            }
-            else if (Math.round(this.picture.reload) == 0){
-                towerImg.src = `Assets/Cats/${this.type}/${this.type.toLowerCase()}Idle.png`;
-                this.picture.reload = this.picture.action;
-                this.shoot = false;
-            }
-            else if (this.shoot == true){
-                this.picture.reload--
+        } else {
+            if(playedFrames > this.animation.frame.played) {
+                sprite.src = this.setFrame(playedFrames+1);
+                this.animation.frame.played++;
             }
 
+            let middle = Math.floor(animInfo.frames * animInfo.frameTicks / 2);
+            if(this.animation.state == "Action" && this.animation.frame.tick >= middle && !this.animation.actionFlag) {
+                this.animation.actionFlag = true;
+            }
+            this.animation.frame.tick += this.curBuff > 0 ? 2 : 1;
         }
+    }
+
+    setFrame(frame) {
+        let buffed = this.curBuff > 0 ? "Buff" : "Normal";
+        console.log(this.animation.state);
+        return `Assets/Cats/${this.type}/${buffed}/${this.animation.state}/${frame}.png`;
+    }
+
+    resetAnimation(sprite) {
+        this.animation.frame.tick = 0;
+        this.animation.frame.played = 0;
+        sprite.src = this.setFrame(1);
+    }
+
+    changeState() {
+        this.animation.state = "Action";
+        this.resetAnimation(document.getElementById(this.id));
     }
 }
 
