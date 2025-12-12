@@ -39,8 +39,19 @@
     &[hidden] {
         display: none;
     }
-    &[chosen="false"] {
+    &[cooldown="true"]>[id*="Img"] {
+        filter: brightness(0.75);
+    }
+    &[chosen="false"]>[id*="Img"] {
         filter: brightness(0.5);
+    }
+}
+
+.Timer {
+    position: absolute;
+    color: white;
+    &[cooldown="false"] {
+        display: none;
     }
 }
 

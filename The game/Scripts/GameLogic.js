@@ -18,7 +18,24 @@ class LevelManager {
     firstCell = { x: 176, y: 413 }; //position of the center of the first (top-left) cell
     buttonControl = new AbortController(); //object which is used to delete all created eventListeners inside LevelManager
     chosenTower = "Generator";
-    currency = 2;
+    currency = 4;
+    startDelay = 20 * tps;
+    reload = {
+        current: {
+            generator: 0,
+            basic: 0,
+            freezing: 0,
+            spike: 0,
+            buff: 0
+        },
+        max: {
+            generator: 3.5 * tps,
+            basic: 3.5 * tps,
+            freezing: 5 * tps,
+            spike: 15 * tps,
+            buff: 20 * tps
+        }
+    };
 
     constructor(level, waves) {
         this.levelInfo.currentLevel = level;
@@ -36,6 +53,7 @@ class LevelManager {
 
     update() { //main function where most of the logic takes place and which is called each tick
         if (this.status == "running") {
+            this.reloadSystem();
             this.waveManager();
             this.enemyAction();
             this.towerAction();
@@ -66,6 +84,59 @@ class LevelManager {
             setTimeout(() => this.update(), 100);
         } else if (this.status == "exit") {
             this.exit();
+        }
+    }
+
+    reloadSystem() {
+        if(this.reload.current.generator > 0) {
+            let timer = document.getElementById("generatorTimer");
+            timer.innerHTML = Math.round(this.reload.current.generator * 10 / tps) / 10;
+            timer.setAttribute("cooldown", true);
+            document.getElementById("GeneratorCatUI").setAttribute("cooldown", true);
+            this.reload.current.generator--;
+        } else {
+            document.getElementById("generatorTimer").setAttribute("cooldown", false);
+            document.getElementById("GeneratorCatUI").setAttribute("cooldown", false);
+        }
+        if(this.reload.current.basic > 0) {
+            let timer = document.getElementById("basicTimer");
+            timer.innerHTML = Math.round(this.reload.current.basic * 10 / tps) / 10;
+            timer.setAttribute("cooldown", true);
+            document.getElementById("BasicCatUI").setAttribute("cooldown", true);
+            this.reload.current.basic--;
+        } else {
+            document.getElementById("basicTimer").setAttribute("cooldown", false);
+            document.getElementById("BasicCatUI").setAttribute("cooldown", false);
+        }
+        if(this.reload.current.freezing > 0) {
+            let timer = document.getElementById("freezingTimer");
+            timer.innerHTML = Math.round(this.reload.current.freezing * 10 / tps) / 10;
+            timer.setAttribute("cooldown", true);
+            document.getElementById("FreezingCatUI").setAttribute("cooldown", true);
+            this.reload.current.freezing--;
+        } else {
+            document.getElementById("freezingTimer").setAttribute("cooldown", false);
+            document.getElementById("FreezingCatUI").setAttribute("cooldown", false);
+        }
+        if(this.reload.current.spike > 0) {
+            let timer = document.getElementById("spikeTimer");
+            timer.innerHTML = Math.round(this.reload.current.spike * 10 / tps) / 10;
+            timer.setAttribute("cooldown", true);
+            document.getElementById("SpikeCatUI").setAttribute("cooldown", true);
+            this.reload.current.spike--;
+        } else {
+            document.getElementById("spikeTimer").setAttribute("cooldown", false);
+            document.getElementById("SpikeCatUI").setAttribute("cooldown", false);
+        }
+        if(this.reload.current.buff > 0) {
+            let timer = document.getElementById("buffTimer");
+            timer.innerHTML = Math.round(this.reload.current.buff * 10 / tps) / 10;
+            timer.setAttribute("cooldown", true);
+            document.getElementById("BuffCatUI").setAttribute("cooldown", true);
+            this.reload.current.buff--;
+        } else {
+            document.getElementById("buffTimer").setAttribute("cooldown", false);
+            document.getElementById("BuffCatUI").setAttribute("cooldown", false);
         }
     }
 
@@ -156,21 +227,27 @@ class LevelManager {
     placeTower(lane, cell, type) { //places tower on a cell
         if(this.entities.towers[lane][cell] == undefined) {
             let offset;
+            let canPlace = false;
             switch(type) {
                 case "Generator":
                     offset = spriteOffset.generatorTower;
+                    canPlace = this.reload.current.generator <= 0;
                     break;
                 case "Basic":
                     offset = spriteOffset.basicTower;
+                    canPlace = this.reload.current.basic <= 0;
                     break;
                 case "Buff":
                     offset = spriteOffset.buffTower;
+                    canPlace = this.reload.current.buff <= 0;
                     break;
                 case "Spike":
                     offset = spriteOffset.spikeTower;
+                    canPlace = this.reload.current.spike <= 0;
                     break;
                 case "Freezing":
                     offset = spriteOffset.freezingTower;
+                    canPlace = this.reload.current.freezing <= 0;
                     break;
             }
             let position = {
@@ -180,12 +257,29 @@ class LevelManager {
             let id = `t_${type}_${lane}_${cell}`;
             let tower = new Tower(id, position, type);
 
-            if(tower.cost <= this.currency) {
+            if(tower.cost <= this.currency && canPlace) {
                 this.entities.towers[lane][cell] = tower;
                 document.getElementById("gameScreen").innerHTML += tower.createTower();
                 this.currency -= tower.cost;
                 document.getElementById("currencyCounter").innerHTML = this.currency;
                 audioManager.UI.towerPlace.play();
+                switch(type) {
+                    case "Generator":
+                        this.reload.current.generator = this.reload.max.generator;
+                        break;
+                    case "Basic":
+                        this.reload.current.basic = this.reload.max.basic;
+                        break;
+                    case "Buff":
+                        this.reload.current.buff = this.reload.max.buff;
+                        break;
+                    case "Spike":
+                        this.reload.current.spike = this.reload.max.spike;
+                        break;
+                    case "Freezing":
+                        this.reload.current.freezing = this.reload.max.freezing;
+                        break;
+                }
             }
         }
     } 
@@ -331,23 +425,27 @@ class LevelManager {
     }
 
     waveManager() { //spawns and progresses waves and checks lose and win conditions
-        if (this.waveInfo.currentWave < this.waveInfo.waves.length) {
-            let wave = this.waveInfo.waves[this.waveInfo.currentWave];
-            if(wave > 0 && this.waveInfo.randomDelay == 0) {
-                this.spawnWaveEnemy();
-                this.waveInfo.randomDelay = Math.floor((Math.random() * 2 + 1) * tps);
-            } else if(wave == 0) {
-                if(this.entities.enemies.every(lane => lane.length == 0)) {
-                    this.waveInfo.currentWave++;
+        if(this.startDelay <= 0) {
+            if (this.waveInfo.currentWave < this.waveInfo.waves.length) {
+                let wave = this.waveInfo.waves[this.waveInfo.currentWave];
+                if(wave > 0 && this.waveInfo.randomDelay == 0) {
+                    this.spawnWaveEnemy();
+                    this.waveInfo.randomDelay = Math.floor((Math.random() * 4 + 1) * tps);
+                } else if(wave == 0) {
+                    if(this.entities.enemies.every(lane => lane.length == 0)) {
+                        this.waveInfo.currentWave++;
+                    }
+                } else {
+                    this.waveInfo.randomDelay--;
+                }
+                if(this.entities.enemies.some(lane => lane.some(enemy => enemy.position.x <= this.firstCell.x - cellSize.x / 2))) {
+                    this.status = "lose";
                 }
             } else {
-                this.waveInfo.randomDelay--;
-            }
-            if(this.entities.enemies.some(lane => lane.some(enemy => enemy.position.x <= this.firstCell.x - cellSize.x / 2))) {
-                this.status = "lose";
+                this.status = "win";
             }
         } else {
-            this.status = "win";
+            this.startDelay--;
         }
     }
 
@@ -511,11 +609,11 @@ class Tower {
                 this.sounds.action = new Audio("Assets/Audio/tower_attack.ogg");
                 break;
             case "Buff"://баффающий
-                this.stats(2, 10, 5, 2, 0.75, 2, 0.75); //dont forget to change reload to 20
+                this.stats(2, 10, 15, 2, 0.75, 2, 0.75);
                 this.sounds.action = new Audio("Assets/Audio/buff_sound.ogg");
                 break;
             case "Generator": //генератор
-                this.stats(6, 2, 5, 3, 0.4, 2, 0.75); //dont forget to change reload to 12
+                this.stats(6, 2, 6, 3, 0.4, 2, 0.75);
                 this.sounds.action = new Audio("Assets/Audio/currency_generation.ogg");
                 break;
             case "Freezing": //замедляющий
@@ -661,22 +759,22 @@ class Tower {
         let playedFrames = Math.floor(this.animation.frame.tick / animInfo.frameTicks);
 
         if(playedFrames >= animInfo.frames) {
-            if(this.animation.state == "Idle") {
-                this.resetAnimation(sprite);
-            } else {
+            if(this.animation.state == "Action") {
                 this.animation.state = "Idle";
                 this.animation.actionFlag = false;
-                this.resetAnimation(sprite);
             }
+            this.resetAnimation(sprite);
         } else {
             if(playedFrames > this.animation.frame.played) {
                 sprite.src = this.setFrame(playedFrames+1);
                 this.animation.frame.played++;
             }
 
-            let middle = Math.floor(animInfo.frames * animInfo.frameTicks / 2);
-            if(this.animation.state == "Action" && this.animation.frame.tick >= middle && !this.animation.actionFlag) {
-                this.animation.actionFlag = true;
+            if(this.animation.state == "Action") {
+                let middle = Math.floor(animInfo.frames * animInfo.frameTicks / 2);
+                if(this.animation.frame.tick >= middle && !this.animation.actionFlag) {
+                    this.animation.actionFlag = true;
+                }
             }
             this.animation.frame.tick += this.curBuff > 0 ? 2 : 1;
         }
@@ -684,7 +782,6 @@ class Tower {
 
     setFrame(frame) {
         let buffed = this.curBuff > 0 ? "Buff" : "Normal";
-        console.log(this.animation.state);
         return `Assets/Cats/${this.type}/${buffed}/${this.animation.state}/${frame}.png`;
     }
 
