@@ -42,7 +42,7 @@ class LevelLoader {
     setTps() { //loads tps from localStorage
         let savedTps = localStorage.getItem("tps");
         if (savedTps === null) {
-            savedTps = 30;
+            savedTps = 60;
             localStorage.setItem("tps", savedTps);
         }
         tps = Number(savedTps);
