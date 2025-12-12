@@ -160,6 +160,6 @@ class LevelLoader {
 
         Object.values(buttons).forEach(button => button.addEventListener("click", () => audioManager.UI.click.play()));
         Object.values(selectors).forEach(selector => selector.addEventListener("click", () => audioManager.UI.click.play()));
-        document.getElementById("exitUI").addEventListener("click", () => audioManager.UI.click.play());
+        document.getElementById("pauseUI").addEventListener("click", () => audioManager.UI.click.play());
     }
 }

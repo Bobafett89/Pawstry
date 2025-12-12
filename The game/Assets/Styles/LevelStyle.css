@@ -11,14 +11,14 @@
     }
 }
 
-#exitUI {
+#pauseUI {
     cursor: pointer;
     grid-column-start: 7;
     &:hover {
-        filter: contrast(0.75);
+        filter: brightness(0.75);
     }
     &:active {
-        filter: contrast(1);
+        filter: brightness(1);
     }
 }
 
@@ -80,6 +80,30 @@
     justify-content: center;
     align-items: center;
     gap: 250px;
+    &>span {
+        color: white;
+        font-size: 100px;
+    }
+    &>button {
+        border-radius: 15px;
+        font-size: 50px;
+    }
+    &[hidden] {
+        display: none;
+    }
+}
+
+#pauseScreen {
+    width: 1920px;
+    height: 1080px;
+    background-color: rgba(0, 0, 0, 0.75);
+    position: absolute;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 50px;
     &>span {
         color: white;
         font-size: 100px;

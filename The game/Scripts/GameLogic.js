@@ -182,8 +182,8 @@ class LevelManager {
     }
 
     createButtons() { //assigns actions to buttons
-        document.getElementById("exitUI").addEventListener("click", () => this.status = "exit", { signal: this.buttonControl.signal });
         document.getElementById("endButton").addEventListener("click", () => this.status = "exit", { signal: this.buttonControl.signal });
+        document.getElementById("backButton").addEventListener("click", () => this.status = "exit", { signal: this.buttonControl.signal });
 
         for (let i = 0; i < 5; i++) {
             let cat;
@@ -222,6 +222,15 @@ class LevelManager {
                 this.placeTower(lane, cell, this.chosenTower);
             }
         }, { signal: this.buttonControl.signal });
+
+        document.getElementById("pauseUI").addEventListener("click", () => {
+            this.status = "wait";
+            document.getElementById("pauseScreen").hidden = false;
+        });
+        document.getElementById("continueButton").addEventListener("click", () => {
+            this.status = "running";
+            document.getElementById("pauseScreen").hidden = true;
+        })
     }
 
     placeTower(lane, cell, type) { //places tower on a cell
@@ -319,6 +328,7 @@ class LevelManager {
         audioManager.music.level.pause();
         audioManager.music.level.load();
         document.getElementById("endScreen").hidden = true;
+        document.getElementById("pauseScreen").hidden = true;
         document.getElementById("level").hidden = true;
         document.getElementById("mainMenu").hidden = false;
     }
@@ -491,31 +501,6 @@ class LevelManager {
     }
 
     debug() { //temporary function to debug
-        window.addEventListener("keydown", (event) => { // kill enemy with a press of the key "S"
-            if (event.code == "KeyS") {
-                let enemies = this.entities.enemies;
-                for (let i = 0; i < enemies.length; i++) {
-                    if (enemies[i].length > 0) {
-                        let enemy = this.entities.enemies[i].shift();
-                        document.getElementById(enemy.id).remove();
-                        break;
-                    }
-                }
-            }
-        }, { signal: this.buttonControl.signal });
-
-        window.addEventListener("keydown", (event) => { //damage enemy with a press of the key "D"
-            if (event.code == "KeyD") {
-                let enemies = this.entities.enemies;
-                for (let i = 0; i < enemies.length; i++) {
-                    if (enemies[i].length > 0) {
-                        this.entities.enemies[i][0].hp -= 10;
-                        break;
-                    }
-                }
-            }
-        }, { signal: this.buttonControl.signal });
-
         window.addEventListener("keydown", (event) => { //win by pressing "W" and lose by pressing "L"
             if(event.code == "KeyW") {
                 this.status = "win";
@@ -524,35 +509,6 @@ class LevelManager {
                 this.status = "lose";
             }
         }, {signal: this.buttonControl.signal});
-
-        window.addEventListener("keydown", (event) => { //add currency by pressing "A"
-            if(event.code == "KeyA") {
-                this.currency++;
-                document.getElementById("currencyCounter").innerHTML = this.currency;
-            }
-        }, { signal: this.buttonControl.signal});
-
-        window.addEventListener("keydown", (event) => { //freeze all enemies by pressing "F"
-            if (event.code == "KeyF") {
-                let enemies = this.entities.enemies;
-                for(let lane = 0; lane < this.levelInfo.lanes; lane++) {
-                    enemies[lane].forEach(enemy => enemy.freeze = true);
-                }
-            }
-        }, { signal: this.buttonControl.signal });
-        
-        window.addEventListener("keydown", (event) => { //shoots projectile on a first lane by pressin "1"
-            if(event.code == "Digit1") {
-                let position = {
-                    x: this.firstCell.x - spriteOffset.basicProjectile.x,
-                    y: this.firstCell.y - spriteOffset.basicProjectile.y
-                }
-                let id = `p_${"FreezingProjectile"}_${Math.floor(Math.random()*100)}_${Math.floor(Math.random()*100)}`;
-                let projectile = new Projectile(id, position, "FreezingProjectile", true);
-                this.entities.projectiles[0].push(projectile);
-                document.getElementById("gameScreen").innerHTML += this.entities.projectiles[0][this.entities.projectiles[0].length-1].createProjectile();
-            }
-        }, { signal: this.buttonControl.signal});
     }
 }
 

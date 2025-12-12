@@ -83,7 +83,13 @@
 
             <div id="endScreen" hidden>
                 <span id="endMessage">...</span>
-                <button id="endButton">Back</button>
+                <button id="endButton">Back to menu</button>
+            </div>
+
+            <div id="pauseScreen" hidden>
+                <span>Paused</span>
+                <button id="continueButton">Continue</button>
+                <button id="backButton">Back to menu</button>
             </div>
 
             <div id="levelUI">
@@ -116,8 +122,8 @@
                     <span id="freezingCost">7</span>
                     <span id="freezingTimer" class="Timer" cooldown="false">0</span>
                 </div>
-                <div id="exitUI">
-                    <img id="exitImg" src="Assets/UI/pauseIcon.png">
+                <div id="pauseUI">
+                    <img id="pauseImg" src="Assets/UI/pauseIcon.png">
                 </div>
             </div>
 
