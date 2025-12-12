@@ -67,12 +67,15 @@
                 <img src="Assets/Enemies/fast.png">
                 <span>— fast candy. This candy is slow at first, but the less health it has the faster it is.</span>
             </div>
+            <div id="page14" class="page" hidden>
+                <span>If you have a hard time finishing levels, you can instantly win by pressing "W"</span>
+            </div>
             <img src="Assets/UI/icon_text.png">
         </div>
         <button id="nextPage">Next page</button>
         <script>
             let page = 1;
-            let totalPages = 13;
+            let totalPages = 14;
 
             document.getElementById("prevPage").addEventListener("click", () => {
                 if(page > 1) {
