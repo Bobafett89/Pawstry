@@ -1,0 +1,31 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgb(255, 196, 204);
+    margin: 0;
+    overflow: hidden;
+}
+
+.page {
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 250px;
+    margin-left: 50px;
+    &[hidden] {
+        display: none;
+    }
+}
+
+#manual {
+    font-size: 30px;
+    display: flex;
+}
+
+button {
+    font-size: 30px;
+    border-radius: 10px;
+    height: 50px;
+}

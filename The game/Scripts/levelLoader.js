@@ -1,10 +1,10 @@
 class LevelLoader {
     jsonText; //text from Levels.json
-    jsonInput; //html input element
+    //jsonInput; //html input element
 
     constructor() {
-        this.jsonInput = document.getElementById("jsonInput");
-        jsonInput.addEventListener("change", () => this.fileLoad());
+        //this.jsonInput = document.getElementById("jsonInput");
+        //jsonInput.addEventListener("change", () => this.fileLoad());
         let images = document.getElementsByTagName("img");
         Object.values(images).forEach(image => image.setAttribute("draggable", false));
 
@@ -17,17 +17,28 @@ class LevelLoader {
         this.startMusic();
     }
 
-    async fileLoad() { //checks if chosen file is correct, if yes copies text into "jsonText" and transitions to main menu
+    /*async fileLoad() { //checks if chosen file is correct, if yes copies text into "jsonText" and transitions to main menu
         let file = jsonInput.files[0];
         if (file.name == "Levels.json") {
-            this.jsonText = await file.text();
+            //this.jsonText = await file.text();
             document.getElementById("jsonLoader").hidden = true;
             document.getElementById("mainMenu").hidden = false;
         }
-    }
+    }*/
 
     loadLevel(level) { //loads the level and switches to a game screen
-        let levels = JSON.parse(this.jsonText);
+        let levels = {
+            "Level1": [1, 2, 3],
+            "Level2": [1, 2, 3, 13],
+            "Level3": [1, 2, 12, 14],
+            "Level4": [1, 2, 13, 22, 31],
+            "Level5": [1, 2, 23, 32, 42],
+            "Level6": [1, 2, 103, 111, 221],
+            "Level7": [1, 2, 111, 211, 221, 322],
+            "Level8": [1, 2, 113, 421, 414, 530],
+            "Level9": [1, 2, 310, 420, 622, 643],
+            "Level10": [1, 2, 111, 222, 333, 666, 999]
+        };
         let waves = Object.values(levels)[level];
 
         this.switchScreens("levelSelect", "titleScreen");
@@ -42,7 +53,7 @@ class LevelLoader {
     setTps() { //loads tps from localStorage
         let savedTps = localStorage.getItem("tps");
         if (savedTps === null) {
-            savedTps = 30;
+            savedTps = 60;
             localStorage.setItem("tps", savedTps);
         }
         tps = Number(savedTps);
@@ -160,6 +171,6 @@ class LevelLoader {
 
         Object.values(buttons).forEach(button => button.addEventListener("click", () => audioManager.UI.click.play()));
         Object.values(selectors).forEach(selector => selector.addEventListener("click", () => audioManager.UI.click.play()));
-        document.getElementById("exitUI").addEventListener("click", () => audioManager.UI.click.play());
+        document.getElementById("pauseUI").addEventListener("click", () => audioManager.UI.click.play());
     }
 }

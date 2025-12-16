@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>User manual</title>
+        <link rel="stylesheet" href="Assets/Styles/ManualStyle.css">
+    </head>
+    <body>
+        <button id="prevPage">Previous page</button>
+        <div id="manual">
+            <div id="page1" class="page">
+                <span>To browse pages of the user manual click buttons on the left and right sides</span>
+            </div>
+            <div id="page2" class="page" hidden>
+                <span>
+                    1) To launch the game open "Index.html" file <br>
+                    2) Then load Levels.json file using button on the screen <br>
+                    3) In the settings turn on the fullscreen or adjust the scale of the page to your liking <br>
+                    (fullscreen with 100% scale recommended)
+                </span>
+            </div>
+            <div id="page3" class="page" hidden>
+                <span>
+                    In the settings you can adjust volume of music and sounds <br>
+                    as well as ticks per second setting <br> (60 recommended, but if you experience lags you can try lowering it). <br>
+                    You can also reset your progress here.
+                </span>
+            </div>
+            <div id="page4" class="page" hidden>
+                <span>
+                    To start the level you need to press "Play" button and choose the level <br> (there are 10 levels in the game) <br>
+                    On the level you can choose cats and place them on the field, but it costs hearts. <br>
+                    Your goal is to defeat all candies and prevent them from reaching the left side of the field
+                </span>
+            </div>
+            <div id="page5" class="page" hidden>
+                <span>To browse pages of the user manual click buttons on the left and right sides</span>
+            </div>
+            <div id="page6" class="page" hidden>
+                <img src="Assets/Cats/Generator/Normal/Idle/1.png">
+                <span>— heart cat. This cat generates hearts which can be used to buy other cats.</span>
+            </div>
+            <div id="page7" class="page" hidden>
+                <img src="Assets/Cats/Basic/Normal/Idle/1.png">
+                <span>— angry cat. This cat shoots enemies.</span>
+            </div>
+            <div id="page8" class="page" hidden>
+                <img src="Assets/Cats/Buff/Normal/Idle/1.png">
+                <span>— buff cat. This cat buffs other cats, so they can work twice as fast.</span>
+            </div>
+            <div id="page9" class="page" hidden>
+                <img src="Assets/Cats/Spike/Normal/Idle/1.png">
+                <span>— shield cat. This cat is very tough and can attack enemies near him.</span>
+            </div>
+            <div id="page10" class="page" hidden>
+                <img src="Assets/Cats/Freezing/Normal/Idle/1.png">
+                <span>— lazy cat. This cat shoots enemies and slows them down.</span>
+            </div>
+            <div id="page11" class="page" hidden>
+                <img src="Assets/Enemies/basic.png">
+                <span>— simple candy. This enemy will try to reach the left side of the field <br> destoying cats on its way.</span>
+            </div>
+            <div id="page12" class="page" hidden>
+                <img src="Assets/Enemies/tough.png">
+                <span>— wrapped candy. A simple candy in a shielding wrapper.</span>
+            </div>
+            <div id="page13" class="page" hidden>
+                <img src="Assets/Enemies/fast.png">
+                <span>— fast candy. This candy is slow at first, but the less health it has the faster it is.</span>
+            </div>
+            <div id="page14" class="page" hidden>
+                <span>If you have a hard time finishing levels, you can instantly win by pressing "W"</span>
+            </div>
+            <img src="Assets/UI/icon_text.png">
+        </div>
+        <button id="nextPage">Next page</button>
+        <script>
+            let page = 1;
+            let totalPages = 14;
+
+            document.getElementById("prevPage").addEventListener("click", () => {
+                if(page > 1) {
+                    page--;
+                    changePage();
+                }
+            });
+            document.getElementById("nextPage").addEventListener("click", () => {
+                if(page < totalPages) {
+                    page++;
+                    changePage();
+                }
+            });
+
+            function changePage() {
+                for(let i = 1; i <= totalPages; i++){
+                    let pageElement = document.getElementById(`page${i}`);
+                    if(i == page) {
+                        pageElement.hidden = false;
+                    } else {
+                        pageElement.hidden = true;
+                    }
+                }
+            }
+        </script>
+    </body>
+</html>
